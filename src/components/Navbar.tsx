@@ -1,5 +1,5 @@
-import React from 'react';
-import { PlusCircle, CheckCircle2 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { PlusCircle } from 'lucide-react';
 
 interface NavbarProps {
   onNewCheck?: () => void;
@@ -10,6 +10,31 @@ export const Navbar: React.FC<NavbarProps> = ({
   onNewCheck,
   onNavigateSection,
 }) => {
+  const [isOnline, setIsOnline] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    const checkHealth = async () => {
+      try {
+        const res = await fetch('/api/health');
+        if (isMounted) {
+          setIsOnline(res.ok);
+        }
+      } catch {
+        if (isMounted) {
+          setIsOnline(false);
+        }
+      }
+    };
+
+    checkHealth();
+    const interval = setInterval(checkHealth, 30000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
   return (
     <header className="sticky top-0 z-40 w-full bg-[#faf9f6]/95 backdrop-blur-md border-b border-stone-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -23,10 +48,17 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="font-serif font-bold text-stone-900 text-lg tracking-tight">
               FactCheckAI
             </span>
-            <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-stone-100 text-stone-600 border border-stone-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
-              Live Grounded
-            </span>
+            {isOnline === false ? (
+              <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-rose-50 text-rose-700 border border-rose-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-600" />
+                Offline
+              </span>
+            ) : (
+              <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-stone-100 text-stone-600 border border-stone-200">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+                Live Grounded
+              </span>
+            )}
           </div>
         </div>
 

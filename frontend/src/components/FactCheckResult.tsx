@@ -87,10 +87,10 @@ Verified with FactCheckAI Evidence Engine`;
             FACT CHECK RESULT
           </span>
 
-          {result.isDemo ? (
-            <span className="px-2 py-0.5 rounded text-[11px] font-mono font-medium uppercase tracking-wider bg-amber-50 text-amber-800 border border-amber-200 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />
-              DEMO MODE
+          {result.status === 'inconclusive' || result.verdict === 'UNVERIFIED' ? (
+            <span className="px-2 py-0.5 rounded text-[11px] font-mono font-medium uppercase tracking-wider bg-slate-100 text-slate-800 border border-slate-300 flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-600" />
+              INCONCLUSIVE
             </span>
           ) : (
             <span className="px-2 py-0.5 rounded text-[11px] font-mono font-medium uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1">
@@ -101,7 +101,16 @@ Verified with FactCheckAI Evidence Engine`;
         </div>
 
         <div className="flex items-center gap-3 text-xs text-stone-500 font-mono">
-          <span>{result.checkedAt}</span>
+          <span>
+            {(() => {
+              try {
+                const d = new Date(result.checkedAt);
+                return !isNaN(d.getTime()) ? d.toISOString() : result.checkedAt;
+              } catch {
+                return result.checkedAt;
+              }
+            })()}
+          </span>
         </div>
       </div>
 
@@ -112,9 +121,14 @@ Verified with FactCheckAI Evidence Engine`;
           <div className="space-y-2">
             <div className="flex items-center gap-3 flex-wrap">
               <VerdictBadge verdict={result.verdict} size="lg" />
-              <span className="font-mono text-sm font-semibold text-stone-700 tabular-nums">
-                AI confidence: {result.confidence}%
-              </span>
+              {result.status !== 'inconclusive' && result.verdict !== 'UNVERIFIED' && result.confidence > 0 ? (
+                <span
+                  title="Confidence is a heuristic based on source agreement, not a statistical probability"
+                  className="font-mono text-xs sm:text-sm font-semibold text-stone-700 tabular-nums cursor-help"
+                >
+                  Confidence: {result.confidence}% <span className="text-[10px] text-stone-400 font-normal">(heuristic)</span>
+                </span>
+              ) : null}
             </div>
             <p className="text-xs text-stone-600 max-w-xl">
               {verdictConfig.description}

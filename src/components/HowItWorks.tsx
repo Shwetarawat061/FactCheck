@@ -1,5 +1,4 @@
 import React from 'react';
-import { Search, Database, Cpu, CheckCircle } from 'lucide-react';
 
 export const HowItWorks: React.FC = () => {
   return (
@@ -13,7 +12,7 @@ export const HowItWorks: React.FC = () => {
             How FactCheckAI Works
           </h2>
           <p className="text-sm text-stone-600 mt-2 font-serif">
-            A multi-stage scientific verification engine grounded in real institutional sources, peer-reviewed registries, and audit trails.
+            A multi-stage verification pipeline grounded in real-time web retrieval, document analysis, and transparent citations.
           </p>
         </div>
 
@@ -26,7 +25,7 @@ export const HowItWorks: React.FC = () => {
               Enter Claim
             </h3>
             <p className="text-xs text-stone-600 leading-relaxed">
-              Input any factual statement, headline, quote, or statistical claim for semantic entity isolation.
+              Input any factual assertion, article statement, or disputed quote for verification.
             </p>
           </div>
 
@@ -35,10 +34,10 @@ export const HowItWorks: React.FC = () => {
               02
             </div>
             <h3 className="font-serif text-lg font-bold text-stone-900">
-              Retrieve Evidence
+              Search the Web
             </h3>
             <p className="text-xs text-stone-600 leading-relaxed">
-              Queries real-time web search and institutional archives for relevant primary documents and data.
+              Searches the public web for relevant articles, news wire records, and documentation across independent domains.
             </p>
           </div>
 
@@ -47,10 +46,10 @@ export const HowItWorks: React.FC = () => {
               03
             </div>
             <h3 className="font-serif text-lg font-bold text-stone-900">
-              AI Analysis
+              Evidence Audit
             </h3>
             <p className="text-xs text-stone-600 leading-relaxed">
-              Gemini analyzes retrieved evidence against the claim, cross-referencing contradictions and nuances.
+              Gemini cross-examines the retrieved web evidence against the claim, evaluating corroboration and contradictions.
             </p>
           </div>
 
@@ -59,10 +58,10 @@ export const HowItWorks: React.FC = () => {
               04
             </div>
             <h3 className="font-serif text-lg font-bold text-stone-900">
-              Structured Verdict
+              Structured Report
             </h3>
             <p className="text-xs text-stone-600 leading-relaxed">
-              Generates an objective verdict with calibrated AI confidence, verbatim source quotes, and primary links.
+              Generates an objective verdict with heuristic confidence, verbatim quotes, dates (when available), and primary links.
             </p>
           </div>
         </div>

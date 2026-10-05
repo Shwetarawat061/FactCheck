@@ -137,9 +137,12 @@ export const exportFactCheckToPdf = (result: FactCheckResult): void => {
   doc.text('AI CONFIDENCE CALIBRATION', pageWidth - margin - 16, y + 18, { align: 'right' });
 
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
+  doc.setFontSize(16);
   doc.setTextColor(28, 25, 23);
-  doc.text(`${result.confidence}%`, pageWidth - margin - 16, y + 40, { align: 'right' });
+  const confText = (result.confidence !== null && result.confidence !== undefined)
+    ? `${result.confidence}%`
+    : 'INCONCLUSIVE';
+  doc.text(confText, pageWidth - margin - 16, y + 40, { align: 'right' });
 
   y += 70;
 

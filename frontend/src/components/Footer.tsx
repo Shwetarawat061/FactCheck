@@ -33,7 +33,7 @@ export const Footer: React.FC = () => {
               <li>Evidence-first methodology</li>
               <li>Transparent primary sources</li>
               <li>Non-partisan consensus audit</li>
-              <li>Calibrated AI confidence</li>
+              <li>Heuristic source-agreement confidence</li>
             </ul>
           </div>
 
@@ -44,23 +44,19 @@ export const Footer: React.FC = () => {
             </h5>
             <ul className="space-y-2 text-xs text-stone-600">
               <li>React 19 + TypeScript + Vite</li>
-              <li>Google Identity Services</li>
-              <li>Gemini 3.8 Flash Grounding</li>
+              <li>Web search retrieval + Gemini analysis</li>
               <li>REST API Architecture</li>
             </ul>
           </div>
 
-          {/* Institutional Sources */}
+          {/* Web Retrieval Scope */}
           <div>
             <h5 className="font-mono text-xs uppercase font-bold text-stone-900 mb-3 tracking-wider">
-              Audited Registries
+              Search Scope
             </h5>
-            <ul className="space-y-2 text-xs text-stone-600">
-              <li>WHO / IARC Cancer Registries</li>
-              <li>NASA Earth Observatory</li>
-              <li>PubMed & National Science Library</li>
-              <li>United Nations DESA Indicators</li>
-            </ul>
+            <p className="text-xs text-stone-600 leading-relaxed">
+              Searches the public web for corroborating articles, scientific reporting, and indexed public records.
+            </p>
           </div>
 
         </div>

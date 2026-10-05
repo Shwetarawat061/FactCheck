@@ -8,10 +8,10 @@ def create_app(config_class=Config):
     CORS(app)
 
     # Register blueprints
-    from .routes.factcheck_routes import factcheck_bp
+    from .routes.factcheck_routes import bp as factcheck_bp
     from .routes.health_routes import health_bp
 
-    app.register_blueprint(factcheck_bp, url_prefix='/api/fact-check')
+    app.register_blueprint(factcheck_bp)
     app.register_blueprint(health_bp, url_prefix='/api')
 
     return app

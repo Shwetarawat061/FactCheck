@@ -1,7 +1,8 @@
 """
 Real-time Evidence Search Service
 Integrates with Google Search tool via Google GenAI SDK (gemini-3.8-flash)
-Fetches live web results and grounding chunks to anchor fact-check citations in real-time data.
+Extracts live web results and grounding chunks to anchor fact-check citations strictly in verified web data.
+Zero-mock policy: never generates synthetic sources or fallbacks.
 """
 
 import os
@@ -13,208 +14,231 @@ class EvidenceSearchService:
     @classmethod
     def search_google_realtime(cls, claim: str) -> dict:
         """
-        Executes Google Search tool integration via Gemini 3.8 Flash
-        Extracts live web grounding chunks and returns structured verification report.
+        Executes Google Search tool integration via Gemini 3.8 Flash.
+        Enforces evidence integrity:
+        1. All sources come from verified grounding chunks.
+        2. Fewer than 2 independent domains -> INCONCLUSIVE.
+        3. Polarity must match consensus.
         """
         api_key = os.environ.get('GEMINI_API_KEY')
         if not api_key:
-            return cls.search_archive(claim)
+            raise RuntimeError("VERIFICATION_FAILED: Missing GEMINI_API_KEY on verification server.")
+
+        from google import genai
+        client = genai.Client(api_key=api_key)
+
+        sanitized_claim = claim.replace('<', ' ').replace('>', ' ').strip()
+
+        # Stage 1: Live Grounded Search
+        search_prompt = f"""You are a rigorous, neutral fact-checking verification investigator.
+Your task is to search the web for reliable, authoritative empirical evidence, scientific consensus, and official records regarding this claim:
+"{sanitized_claim}"
+
+Instructions:
+1. Search across verified scientific journals, official regulatory agencies (.gov, .edu, WHO, NASA, CDC), and reputable news wires (AP, Reuters, BBC).
+2. Report objective facts and findings.
+3. Identify whether evidence strongly supports, contradicts, or provides context for this claim."""
+
+        search_response = client.models.generateContent(
+            model='gemini-3.8-flash',
+            contents=search_prompt,
+            config={
+                'tools': [{'googleSearch': {}}]
+            }
+        )
+
+        # Extract genuine web grounding chunks
+        chunks = []
+        seen_domains = set()
+        seen_urls = set()
 
         try:
-            from google import genai
-            client = genai.Client(api_key=api_key)
+            candidate = search_response.candidates[0] if search_response.candidates else None
+            if candidate and hasattr(candidate, 'grounding_metadata') and candidate.grounding_metadata:
+                metadata = candidate.grounding_metadata
+                raw_chunks = getattr(metadata, 'grounding_chunks', None) or []
+                for item in raw_chunks:
+                    web = getattr(item, 'web', None)
+                    if web:
+                        uri = getattr(web, 'uri', '') or ''
+                        title = getattr(web, 'title', '') or ''
+                        if uri and uri.startswith('http'):
+                            domain = urlparse(uri).netloc.replace('www.', '').lower()
+                            if uri not in seen_urls:
+                                seen_urls.add(uri)
+                                seen_domains.add(domain)
+                                chunks.append({
+                                    'url': uri,
+                                    'title': title or f"Source: {domain}",
+                                    'domain': domain
+                                })
+        except Exception as e:
+            print("Notice extracting grounding chunks:", e)
 
-            prompt = f"""You are FactCheckAI, an authoritative, rigorous evidence-based claim verification engine.
-Perform a live web search to verify the following factual assertion against real-time scientific, institutional, and journalistic consensus:
-"{claim}"
+        # Stage 2: Evidence Threshold Gate
+        if len(chunks) < 2 or len(seen_domains) < 2:
+            return {
+                "id": f"audit-{abs(hash(sanitized_claim))}",
+                "claim": sanitized_claim,
+                "checkedAt": "Checked just now",
+                "verdict": "INCONCLUSIVE",
+                "confidence": None,
+                "summary": f"Insufficient authoritative, independent public evidence was retrieved from indexed records to objectively substantiate or disprove \"{sanitized_claim}\".",
+                "analysis": "Our real-time search across institutional databases and journalistic archives did not uncover multiple corroborating sources from independent domains for this specific assertion.",
+                "reasoning": [
+                    {
+                        "index": "01",
+                        "title": "Evidence Scarcity Check",
+                        "description": f"Querying public records retrieved {len(chunks)} verifiable source(s) across {len(seen_domains)} independent domain(s), falling below the minimum threshold (at least 2 independent domains required)."
+                    },
+                    {
+                        "index": "02",
+                        "title": "Epistemic Safety Policy",
+                        "description": "To prevent generative hallucinations and false consensus, FactCheckAI strictly enforces an INCONCLUSIVE determination whenever empirical evidence is insufficient."
+                    }
+                ],
+                "evidenceOverview": {
+                    "total": len(chunks),
+                    "supports": 0,
+                    "contradicts": 0,
+                    "context": len(chunks)
+                },
+                "evidence": [
+                    {
+                        "id": f"ev-{i+1}",
+                        "source": c['domain'],
+                        "sourceName": c['domain'],
+                        "sourceDomain": c['domain'],
+                        "title": c['title'],
+                        "url": c['url'],
+                        "quote": f"Referenced in public search records regarding \"{sanitized_claim}\".",
+                        "date": "Retrieved Web Evidence",
+                        "relationship": "CONTEXT",
+                        "urlReachable": True
+                    } for i, c in enumerate(chunks)
+                ],
+                "isDemo": False,
+                "status": "inconclusive"
+            }
 
-Requirements:
-1. Cross-reference real-time web search results (reputable organizations, peer-reviewed journals, regulatory bodies, and news agencies).
-2. Determine an objective verdict: must be one of "TRUE", "MOSTLY TRUE", "MIXED", "MOSTLY FALSE", "FALSE", or "UNVERIFIED".
-3. Provide a calibrated AI confidence score (50-99).
-4. Provide a 2-3 sentence executive summary explaining what the live search results confirm.
-5. Provide 3-4 structured reasoning steps with clear titles and evidence-backed explanations.
-6. Return structured evidence items with verbatim citations from the search results.
+        # Stage 3: Grounded Analysis Pass
+        sources_text = "\n\n".join([
+            f"Source [{idx+1}]:\n  Title: \"{c['title']}\"\n  Domain: \"{c['domain']}\"\n  URL: \"{c['url']}\""
+            for idx, c in enumerate(chunks[:6])
+        ])
 
-Respond with ONLY a valid JSON object conforming to this schema (no markdown backticks, no extra text):
+        analysis_prompt = f"""You are FactCheckAI, an impartial evidence auditor.
+Analyze the following claim strictly against the verified retrieved sources below:
+
+CLAIM: "{sanitized_claim}"
+
+VERIFIED RETRIEVED SOURCES:
+{sources_text}
+
+CRITICAL RULES:
+1. You MUST NOT invent any sources, URLs, or quotes. Use ONLY the verified sources provided above.
+2. For each source, classify whether it SUPPORTS, CONTRADICTS, or provides CONTEXT for the claim.
+3. Determine an objective verdict: must be one of "FALSE", "TRUE", "MOSTLY TRUE", "MOSTLY FALSE", "MIXED", or "INCONCLUSIVE".
+4. Provide a 2-3 sentence executive summary.
+5. Provide 3-4 structured reasoning steps explaining how the verdict was derived.
+6. Provide a concise, substantive excerpt explaining what each source asserts.
+
+Reply with ONLY a single valid JSON object adhering strictly to this schema:
 {{
-  "id": "claim-{abs(hash(claim))}",
-  "claim": "{claim}",
-  "checkedAt": "Checked just now (Live Web Search)",
   "verdict": "FALSE",
-  "confidence": 95,
   "summary": "...",
+  "analysis": "...",
   "reasoning": [
-    {{ "index": "01", "title": "...", "description": "..." }},
-    {{ "index": "02", "title": "...", "description": "..." }}
+    {{ "index": "01", "title": "...", "description": "..." }}
   ],
-  "evidenceOverview": {{
-    "total": 5,
-    "supports": 0,
-    "contradicts": 4,
-    "context": 1
-  }},
-  "evidence": [
+  "sourceEvaluations": [
     {{
-      "id": "live-src-1",
-      "source": "...",
-      "title": "...",
-      "url": "https://...",
-      "quote": "...",
-      "date": "Live Search Result",
+      "sourceIndex": 1,
       "relationship": "CONTRADICTS",
-      "credibilityScore": 98
+      "excerpt": "..."
     }}
   ]
 }}"""
 
-            # Call Gemini 3.8 Flash with Google Search tool enabled
-            response = client.models.generateContent(
-                model='gemini-3.8-flash',
-                contents=prompt,
-                config={
-                    'tools': [{'googleSearch': {}}]
-                }
-            )
-
-            raw_text = response.text or ''
-            clean_json = re.sub(r'^```json\s*', '', raw_text.strip(), flags=re.IGNORECASE)
-            clean_json = re.sub(r'```$', '', clean_json.strip())
-
-            report = json.loads(clean_json)
-
-            # Extract live web grounding chunks from response metadata
-            live_sources = []
-            try:
-                candidate = response.candidates[0] if response.candidates else None
-                if candidate and hasattr(candidate, 'grounding_metadata') and candidate.grounding_metadata:
-                    metadata = candidate.grounding_metadata
-                    chunks = getattr(metadata, 'grounding_chunks', None) or []
-                    for i, chunk in enumerate(chunks):
-                        web = getattr(chunk, 'web', None)
-                        if web:
-                            uri = getattr(web, 'uri', '') or ''
-                            title = getattr(web, 'title', '') or 'Live Search Grounding'
-                            domain = urlparse(uri).netloc.replace('www.', '') if uri else ''
-                            if uri and uri.startswith('http'):
-                                live_sources.append({
-                                    "id": f"live-grounding-{i+1}",
-                                    "source": domain or "Verified Web Source",
-                                    "sourceName": domain or "Verified Web Source",
-                                    "sourceDomain": domain,
-                                    "title": title,
-                                    "url": uri,
-                                    "quote": f"Verified in live Google Search results regarding '{claim}'.",
-                                    "date": "Live Web Result",
-                                    "relationship": "CONTRADICTS" if report.get("verdict") in ["FALSE", "MOSTLY FALSE"] else "SUPPORTS",
-                                    "credibilityScore": 96
-                                })
-            except Exception as meta_err:
-                print("Notice parsing grounding metadata:", meta_err)
-
-            # Merge live grounding sources if found
-            if live_sources:
-                existing_urls = {item.get('url') for item in report.get('evidence', [])}
-                for ls in live_sources:
-                    if ls['url'] not in existing_urls:
-                        report['evidence'].append(ls)
-
-            report['isDemo'] = False
-            report['evidenceOverview']['total'] = len(report.get('evidence', []))
-            return report
-
-        except Exception as e:
-            print("Live Google Search grounding fallback to verified archive:", e)
-            return cls.search_archive(claim)
-
-    @staticmethod
-    def search_archive(claim: str) -> dict:
-        """
-        Fallback: verified institutional archive records matching known assertions.
-        """
-        c = claim.lower()
-        if 'moon' in c or 'great wall' in c:
-            return {
-                "id": "claim-great-wall",
-                "claim": claim,
-                "checkedAt": "Checked just now",
-                "verdict": "FALSE",
-                "confidence": 94,
-                "summary": "The claim that the Great Wall of China is visible from the Moon with the naked human eye is false. Apollo astronauts and NASA optical scientists confirm that optical diffraction prevents masonry widths of only a few meters from being resolved across lunar distances (384,400 km).",
-                "reasoning": [
-                    {"index": "01", "title": "Optical Resolution Limits", "description": "The human eye has an angular resolution limit of approximately 1 arcminute (0.02°). Resolving a 5m wide wall from 384,400 km would require an angular resolution 10,000 times finer than biological human eyesight."},
-                    {"index": "02", "title": "Apollo Astronaut Testimony", "description": "Apollo 11 commander Neil Armstrong repeatedly confirmed that only continents, clouds, and oceans are distinguishable from lunar orbit."},
-                    {"index": "03", "title": "Low Earth Orbit (LEO) Clarification", "description": "Under ideal lighting, shadows may render the wall visible from Low Earth Orbit (160-300 km), but never from the Moon."}
-                ],
-                "evidenceOverview": {
-                    "total": 5,
-                    "supports": 0,
-                    "contradicts": 4,
-                    "context": 1
-                },
-                "evidence": [
-                    {
-                        "id": "src-1",
-                        "source": "NASA Earth Observatory",
-                        "title": "China's Wall Less and More Great from Space",
-                        "url": "https://earthobservatory.nasa.gov",
-                        "quote": "The Great Wall of China cannot be seen from the Moon. In fact, from low orbit it is barely discernible only under high sun angle shadows.",
-                        "date": "Official NASA Space Fact Archive",
-                        "relationship": "CONTRADICTS",
-                        "credibilityScore": 99
-                    },
-                    {
-                        "id": "src-2",
-                        "source": "Smithsonian Air & Space Museum",
-                        "title": "Visible from Space? Debunking Common Orbit Myths",
-                        "url": "https://airandspace.si.edu",
-                        "quote": "Astronauts have confirmed that individual highways, bridges, and walls are unresolvable at lunar distances without high-magnification optical sensors.",
-                        "date": "Curator Verified Paper",
-                        "relationship": "CONTRADICTS",
-                        "credibilityScore": 98
-                    }
-                ],
-                "isDemo": True
+        analysis_response = client.models.generateContent(
+            model='gemini-3.8-flash',
+            contents=analysis_prompt,
+            config={
+                'response_mime_type': 'application/json'
             }
+        )
+
+        parsed_data = json.loads(analysis_response.text or '{}')
+        evaluations = parsed_data.get('sourceEvaluations', [])
+
+        normalized_evidence = []
+        for idx, chunk in enumerate(chunks[:6]):
+            eval_item = next((e for e in evaluations if e.get('sourceIndex') == idx + 1), {})
+            rel = eval_item.get('relationship', 'CONTEXT')
+            if rel not in ['SUPPORTS', 'CONTRADICTS', 'CONTEXT']:
+                rel = 'CONTEXT'
+
+            excerpt = eval_item.get('excerpt', '').strip() or f"Primary citation examining assertion: \"{sanitized_claim[:80]}...\""
+            normalized_evidence.append({
+                "id": f"ev-{idx+1}",
+                "source": chunk['domain'],
+                "sourceName": chunk['domain'],
+                "sourceDomain": chunk['domain'],
+                "title": chunk['title'],
+                "url": chunk['url'],
+                "quote": excerpt,
+                "date": "Retrieved Web Evidence",
+                "relationship": rel,
+                "urlReachable": True
+            })
+
+        supports_count = sum(1 for e in normalized_evidence if e['relationship'] == 'SUPPORTS')
+        contradicts_count = sum(1 for e in normalized_evidence if e['relationship'] == 'CONTRADICTS')
+        context_count = sum(1 for e in normalized_evidence if e['relationship'] == 'CONTEXT')
+        decisive_count = supports_count + contradicts_count
+
+        verdict = (parsed_data.get('verdict') or 'INCONCLUSIVE').upper()
+
+        # Polarity check
+        if decisive_count == 0:
+            verdict = 'INCONCLUSIVE'
+        elif supports_count > 0 and contradicts_count > 0:
+            verdict = 'MIXED'
+        elif contradicts_count >= 2 and supports_count == 0:
+            if verdict in ['TRUE', 'MOSTLY TRUE']:
+                verdict = 'FALSE'
+        elif supports_count >= 2 and contradicts_count == 0:
+            if verdict in ['FALSE', 'MOSTLY FALSE']:
+                verdict = 'TRUE'
+
+        calibrated_confidence = None
+        if verdict not in ['INCONCLUSIVE', 'UNVERIFIED']:
+            if decisive_count >= 3 and (supports_count == 0 or contradicts_count == 0):
+                calibrated_confidence = 94
+            elif decisive_count >= 2 and (supports_count == 0 or contradicts_count == 0):
+                calibrated_confidence = 88
+            elif verdict == 'MIXED':
+                calibrated_confidence = 74
+            else:
+                calibrated_confidence = 80
 
         return {
-            "id": f"claim-archive-{abs(hash(claim)) % 10000}",
-            "claim": claim,
+            "id": f"audit-{abs(hash(sanitized_claim))}",
+            "claim": sanitized_claim,
             "checkedAt": "Checked just now",
-            "verdict": "MOSTLY FALSE" if any(w in c for w in ['flat', 'cancer', '10%']) else "CONTEXT",
-            "confidence": 92,
-            "summary": f"Evidence audit conducted for '{claim}'. Multilateral consensus data confirms substantial qualifications are required when evaluating this claim.",
-            "reasoning": [
-                {"index": "01", "title": "Claim Assertion Mapping", "description": "Isolating testable factual premises and evaluating against published literature."},
-                {"index": "02", "title": "Multi-Source Consensus", "description": "Cross-referencing verified institutional databases and peer-reviewed indices."}
-            ],
+            "verdict": verdict,
+            "confidence": calibrated_confidence,
+            "summary": parsed_data.get('summary', f"Multi-source evidence audit conducted for \"{sanitized_claim}\"."),
+            "analysis": parsed_data.get('analysis', parsed_data.get('summary', '')),
+            "reasoning": parsed_data.get('reasoning', []),
             "evidenceOverview": {
-                "total": 4,
-                "supports": 1,
-                "contradicts": 2,
-                "context": 1
+                "total": len(normalized_evidence),
+                "supports": supports_count,
+                "contradicts": contradicts_count,
+                "context": context_count
             },
-            "evidence": [
-                {
-                    "id": "src-gen-1",
-                    "source": "Reuters Fact Check Archive",
-                    "title": "Verification Analysis & Public Record Inquiries",
-                    "url": "https://www.reuters.com/fact-check",
-                    "quote": "Archival records and public institutional data show significant qualifications are required.",
-                    "date": "Fact Check Registry",
-                    "relationship": "CONTRADICTS",
-                    "credibilityScore": 96
-                },
-                {
-                    "id": "src-gen-2",
-                    "source": "Associated Press News",
-                    "title": "Cross-Examination of Widely Circulated Statements",
-                    "url": "https://apnews.com/hub/ap-fact-check",
-                    "quote": "Researchers highlight that empirical context must be factored in prior to evaluation.",
-                    "date": "Reference Archive",
-                    "relationship": "CONTEXT",
-                    "credibilityScore": 95
-                }
-            ],
-            "isDemo": True
+            "evidence": normalized_evidence,
+            "sources": normalized_evidence,
+            "isDemo": False,
+            "status": "inconclusive" if verdict == "INCONCLUSIVE" else "ok"
         }

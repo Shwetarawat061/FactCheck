@@ -7,14 +7,13 @@ import { AnalysisLoader } from './components/AnalysisLoader';
 import { FactCheckResult } from './components/FactCheckResult';
 import { HowItWorks } from './components/HowItWorks';
 import { UseCases } from './components/UseCases';
-import { FactCheckApiService, INITIAL_PIPELINE_STEPS } from './services/api';
-import { FactCheckResult as ResultType, PipelineStep } from './types/factCheck';
+import { checkClaim, FactCheckError } from './services/factCheckClient';
+import { FactCheckResult as ResultType } from './types/factCheck';
 import { ArrowRight, CheckCircle2, ShieldCheck, Database, Search, AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function App() {
   const [claimInput, setClaimInput] = useState<string>('The Great Wall of China is visible from the Moon.');
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [pipelineSteps, setPipelineSteps] = useState<PipelineStep[]>(INITIAL_PIPELINE_STEPS);
   const [result, setResult] = useState<ResultType | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -34,15 +33,16 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     try {
-      const data = await FactCheckApiService.checkClaim(claimToVerify, (_stepIndex, updatedSteps) => {
-        setPipelineSteps(updatedSteps);
-      });
-
+      const data = await checkClaim(claimToVerify);
       setResult(data);
+    } catch (e: any) {
+      setErrorMessage(
+        e instanceof FactCheckError
+          ? e.message
+          : 'Verification failed. No result was produced.'
+      );
+    } finally {
       setIsLoading(false);
-    } catch (err: any) {
-      setIsLoading(false);
-      setErrorMessage(err?.message || 'Something went wrong while analyzing this claim.');
     }
   };
 
@@ -50,7 +50,6 @@ export default function App() {
     setResult(null);
     setClaimInput('');
     setErrorMessage(null);
-    setPipelineSteps(INITIAL_PIPELINE_STEPS);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -116,7 +115,7 @@ export default function App() {
                 <span>Verify Another Claim</span>
               </button>
               <span className="text-xs font-mono text-stone-500">
-                Grounding: Google Search Tool + Gemini 3.8 Flash
+                Verification Engine: Web search retrieval + Gemini analysis
               </span>
             </div>
 
@@ -131,7 +130,6 @@ export default function App() {
         {isLoading && (
           <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
             <AnalysisLoader
-              steps={pipelineSteps}
               claim={claimInput}
             />
           </div>
@@ -193,41 +191,33 @@ export default function App() {
             <section id="examples" className="py-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="text-center max-w-2xl mx-auto mb-12">
                 <span className="font-mono text-xs uppercase font-bold text-stone-500 tracking-wider">
-                  VERIFICATION ARCHIVE
+                  SAMPLE PROMPTS
                 </span>
                 <h2 className="font-serif text-3xl font-bold tracking-tight text-stone-900 mt-1">
-                  Explore Example Fact Checks
+                  Explore Suggested Claims
                 </h2>
                 <p className="text-sm text-stone-600 mt-2 font-serif">
-                  Click any example below to inspect the evidence hierarchy and source citations:
+                  Select any claim below to trigger real-time web search retrieval and live verification:
                 </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[
                   {
-                    claim: 'The Great Wall of China is visible from the Moon.',
-                    verdict: 'FALSE',
-                    summary: 'Contradicted by optical physics and NASA Apollo astronaut testimony; masonry is optically unresolvable from 384,400 km away.',
-                    sources: 5
+                    topic: 'Space Exploration',
+                    claim: 'The Great Wall of China is visible from the Moon.'
                   },
                   {
-                    claim: 'Coffee causes cancer.',
-                    verdict: 'FALSE',
-                    summary: 'WHO IARC removed coffee from possible carcinogens in 2016, observing protective associations for liver and uterine cancers.',
-                    sources: 6
+                    topic: 'Health & Nutrition',
+                    claim: 'Coffee causes cancer.'
                   },
                   {
-                    claim: 'Humans only use 10% of their brains.',
-                    verdict: 'FALSE',
-                    summary: 'Functional fMRI imaging and clinical neurology confirm 100% metabolic activation across distributed cortico-subcortical circuits.',
-                    sources: 5
+                    topic: 'Neuroscience & Biology',
+                    claim: 'Humans only use 10% of their brains.'
                   },
                   {
-                    claim: 'Water boils at 100°C at sea level.',
-                    verdict: 'TRUE',
-                    summary: 'Under 1 standard atmosphere (101.325 kPa), pure water transitions from liquid to vapor at 99.974°C (conventionally 100.0°C).',
-                    sources: 4
+                    topic: 'Physical Science',
+                    claim: 'Water boils at 100°C at sea level.'
                   }
                 ].map((ex, i) => (
                   <div
@@ -236,21 +226,15 @@ export default function App() {
                     className="p-5 rounded-xl bg-white border border-stone-200/90 shadow-2xs hover:border-stone-400 hover:shadow-xs transition-all cursor-pointer text-left space-y-2 group"
                   >
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-mono font-bold text-stone-900 group-hover:text-stone-700">
-                        {ex.verdict}
-                      </span>
-                      <span className="font-mono text-stone-400 text-[11px]">
-                        {ex.sources} sources reviewed
+                      <span className="font-mono font-medium text-stone-500 text-[11px] uppercase tracking-wider">
+                        {ex.topic}
                       </span>
                     </div>
                     <h4 className="font-serif text-base font-bold text-stone-900 group-hover:text-stone-800 leading-snug">
                       "{ex.claim}"
                     </h4>
-                    <p className="text-xs text-stone-600 line-clamp-2 leading-relaxed">
-                      {ex.summary}
-                    </p>
                     <div className="pt-2 text-[11px] font-semibold text-stone-900 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                      <span>Audit Evidence</span>
+                      <span>Try this claim</span>
                       <ArrowRight className="w-3 h-3" />
                     </div>
                   </div>
@@ -270,7 +254,7 @@ export default function App() {
                       Proof, not just an automated opinion.
                     </h2>
                     <p className="mt-4 text-sm text-stone-600 leading-relaxed font-serif">
-                      FactCheckAI is built on the tenet that information verification requires an audit trail: exact quotes, publisher domains, publication dates, and explicit relationship labels (SUPPORTS, CONTRADICTS, CONTEXT).
+                      FactCheckAI is built on the tenet that information verification requires an audit trail: exact quotes, publisher domains, publication dates (when available), and explicit relationship labels (SUPPORTS, CONTRADICTS, CONTEXT).
                     </p>
                     <div className="mt-6 space-y-3 text-xs text-stone-700">
                       <div className="flex items-start gap-2">
@@ -279,11 +263,11 @@ export default function App() {
                       </div>
                       <div className="flex items-start gap-2">
                         <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
-                        <span><strong>Google Search Tool Grounding:</strong> Real-time web retrieval grounds findings in verifiable institutional sources.</span>
+                        <span><strong>Web Search Retrieval:</strong> Real-time search across the public web retrieves corroborating and contradictory primary evidence.</span>
                       </div>
                       <div className="flex items-start gap-2">
                         <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
-                        <span><strong>Honest AI Confidence:</strong> Confidence scores are clearly presented as machine synthesis weights rather than statistical absolutes.</span>
+                        <span><strong>Heuristic AI Confidence:</strong> Confidence is a heuristic based on source agreement, not a statistical probability.</span>
                       </div>
                     </div>
                   </div>

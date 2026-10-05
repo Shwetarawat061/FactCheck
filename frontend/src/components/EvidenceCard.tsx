@@ -1,10 +1,10 @@
 import React from 'react';
-import { ExternalLink, Check, X, Info, Globe, Shield } from 'lucide-react';
+import { ExternalLink, Check, X, Info, Globe, AlertTriangle } from 'lucide-react';
 import { Evidence, EvidenceRelationship } from '../types/factCheck';
 
 interface EvidenceCardProps {
   evidence: Evidence;
-  index: number;
+  index?: number;
 }
 
 const RELATIONSHIP_CONFIG: Record<
@@ -40,17 +40,22 @@ const RELATIONSHIP_CONFIG: Record<
   }
 };
 
-export const EvidenceCard: React.FC<EvidenceCardProps> = ({ evidence, index }) => {
+export const EvidenceCard: React.FC<EvidenceCardProps> = ({ evidence }) => {
   const relConfig = RELATIONSHIP_CONFIG[evidence.relationship] || RELATIONSHIP_CONFIG['CONTEXT'];
   const RelIcon = relConfig.icon;
 
-  let domain = '';
-  try {
-    const urlObj = new URL(evidence.url);
-    domain = urlObj.hostname.replace(/^www\./, '');
-  } catch {
-    domain = evidence.source.toLowerCase().replace(/[^a-z0-9]/g, '') + '.org';
+  let domain = evidence.sourceDomain || '';
+  if (!domain && evidence.url) {
+    try {
+      const urlObj = new URL(evidence.url);
+      domain = urlObj.hostname.replace(/^www\./, '');
+    } catch {
+      domain = evidence.source.toLowerCase().replace(/[^a-z0-9.]/g, '');
+    }
   }
+
+  const isReachable = evidence.urlReachable !== false;
+  const displayDate = evidence.date && evidence.date.trim() ? evidence.date.trim() : 'Date unavailable';
 
   return (
     <div className="bg-white rounded-xl border border-stone-200/90 shadow-2xs p-5 sm:p-6 transition-all hover:border-stone-300 hover:shadow-xs group">
@@ -70,11 +75,19 @@ export const EvidenceCard: React.FC<EvidenceCardProps> = ({ evidence, index }) =
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          {evidence.credibilityScore && (
-            <span className="hidden sm:inline-flex items-center gap-1 font-mono text-[11px] text-stone-500 bg-stone-100/80 px-2 py-0.5 rounded border border-stone-200">
-              <Shield className="w-3 h-3 text-stone-500" />
-              {evidence.credibilityScore}% authority
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Link reachable verification status */}
+          {!isReachable && (
+            <span className="inline-flex items-center gap-1 font-mono text-[11px] text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+              <AlertTriangle className="w-3 h-3 text-amber-600" />
+              <span>Link could not be verified</span>
+            </span>
+          )}
+
+          {/* Relevance score */}
+          {typeof evidence.relevanceScore === 'number' && (
+            <span className="hidden sm:inline-flex items-center gap-1 font-mono text-[11px] text-stone-600 bg-stone-100 px-2 py-0.5 rounded border border-stone-200">
+              <span>{Math.round(evidence.relevanceScore)}% Relevance</span>
             </span>
           )}
 
@@ -93,26 +106,30 @@ export const EvidenceCard: React.FC<EvidenceCardProps> = ({ evidence, index }) =
         {evidence.title}
       </h4>
 
-      {/* Verbatim Extracted Quote */}
-      <div className="relative pl-3.5 my-3 border-l-2 border-stone-300/80 italic text-xs sm:text-sm text-stone-700 leading-relaxed bg-stone-50/50 py-2 pr-3 rounded-r-md">
-        "{evidence.quote}"
-      </div>
+      {/* Verbatim Extracted Excerpt */}
+      {evidence.quote && (
+        <div className="relative pl-3.5 my-3 border-l-2 border-stone-300/80 italic text-xs sm:text-sm text-stone-700 leading-relaxed bg-stone-50/50 py-2 pr-3 rounded-r-md">
+          "{evidence.quote}"
+        </div>
+      )}
 
       {/* Bottom Bar: Date & External Link Button */}
       <div className="flex items-center justify-between pt-3 mt-3 border-t border-stone-100 text-xs">
-        <span className="text-stone-600 font-mono text-[11px]">
-          {evidence.date || 'Peer-reviewed record'}
+        <span className="text-stone-500 font-mono text-[11px]">
+          {displayDate}
         </span>
 
-        <a
-          href={evidence.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-xs font-semibold text-stone-900 hover:text-stone-700 group-hover:translate-x-0.5 transition-all"
-        >
-          <span>Open Source</span>
-          <ExternalLink className="w-3 h-3" />
-        </a>
+        {evidence.url && (
+          <a
+            href={evidence.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-stone-900 hover:text-stone-700 group-hover:translate-x-0.5 transition-all"
+          >
+            <span>Open Source</span>
+            <ExternalLink className="w-3 h-3" />
+          </a>
+        )}
       </div>
     </div>
   );

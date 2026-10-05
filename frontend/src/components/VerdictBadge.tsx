@@ -25,7 +25,7 @@ export const VERDICT_CONFIG: Record<
     text: 'text-emerald-800',
     border: 'border-emerald-200',
     icon: CheckCircle2,
-    description: 'The claim is supported by reliable, authoritative empirical evidence.'
+    description: 'The claim is supported by reliable, authoritative empirical consensus from multiple independent sources.'
   },
   'MOSTLY TRUE': {
     label: 'MOSTLY TRUE',
@@ -33,7 +33,7 @@ export const VERDICT_CONFIG: Record<
     text: 'text-teal-800',
     border: 'border-teal-200',
     icon: ShieldCheck,
-    description: 'The primary assertion is accurate, though minor nuances or qualifiers exist.'
+    description: 'The primary assertion is accurate, though minor nuances, qualifiers, or caveats exist.'
   },
   'MIXED': {
     label: 'MIXED',
@@ -41,7 +41,7 @@ export const VERDICT_CONFIG: Record<
     text: 'text-amber-800',
     border: 'border-amber-200',
     icon: AlertTriangle,
-    description: 'The statement contains both factual elements and inaccurate or missing context.'
+    description: 'The claim contains both factual elements and conflicting assertions or significant missing context.'
   },
   'MOSTLY FALSE': {
     label: 'MOSTLY FALSE',
@@ -49,7 +49,7 @@ export const VERDICT_CONFIG: Record<
     text: 'text-orange-800',
     border: 'border-orange-200',
     icon: MinusCircle,
-    description: 'The assertion contains significant inaccuracies with minimal supporting truth.'
+    description: 'The assertion contains significant inaccuracies with minimal or distorted supporting basis.'
   },
   'FALSE': {
     label: 'FALSE',
@@ -57,7 +57,7 @@ export const VERDICT_CONFIG: Record<
     text: 'text-rose-800',
     border: 'border-rose-200',
     icon: XCircle,
-    description: 'The claim is directly contradicted by reliable, peer-reviewed scientific or archival evidence.'
+    description: 'The claim is directly contradicted by reliable, peer-reviewed scientific or verified archival evidence.'
   },
   'UNVERIFIED': {
     label: 'UNVERIFIED',
@@ -65,7 +65,7 @@ export const VERDICT_CONFIG: Record<
     text: 'text-stone-700',
     border: 'border-stone-300',
     icon: HelpCircle,
-    description: 'Insufficient reliable evidence was found to objectively verify or disprove this claim.'
+    description: 'No reliable, authoritative independent evidence could be retrieved to substantiate or refute this assertion.'
   }
 };
 

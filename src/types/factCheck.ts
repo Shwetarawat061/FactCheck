@@ -6,29 +6,29 @@ export type Verdict =
   | 'FALSE'
   | 'UNVERIFIED';
 
-export type EvidenceRelationship =
-  | 'SUPPORTS'
-  | 'CONTRADICTS'
-  | 'CONTEXT';
+export type Relationship = 'SUPPORTS' | 'CONTRADICTS' | 'CONTEXT';
+export type EvidenceRelationship = Relationship;
 
 export interface Evidence {
-  id?: string;
+  id: string;
   source: string;
-  sourceName?: string;
-  sourceDomain?: string;
   title: string;
   url: string;
   quote: string;
-  date?: string;
-  relationship: EvidenceRelationship;
-  direction?: string;
-  credibilityScore?: number;
+  date: string; // may be '' -> UI shows "Date unavailable"
+  relationship: Relationship;
+  credibilityScore: number; // currently retrieval relevance 0-100
+  urlReachable: boolean;
+  sourceName?: string;
+  sourceDomain?: string;
+  relevanceScore?: number;
 }
 
 export interface ReasoningStep {
   index: string;
   title: string;
   description: string;
+  sourceIds?: string[];
 }
 
 export interface EvidenceCounts {
@@ -40,18 +40,21 @@ export interface EvidenceCounts {
 
 export interface FactCheckResult {
   id: string;
+  status: 'ok' | 'inconclusive';
   claim: string;
+  checkedAt: string;
   verdict: Verdict;
-  confidence: number; // AI confidence integer 0-100
+  confidence: number;
   summary: string;
-  analysis?: string;
-  reasoning?: ReasoningStep[];
+  analysis: string;
+  reasoning: ReasoningStep[];
   evidenceOverview: EvidenceCounts;
   evidence: Evidence[];
+  isDemo: false;
   sources?: Evidence[];
-  checkedAt: string;
-  isDemo?: boolean;
 }
+
+export type FactCheckResultData = FactCheckResult;
 
 export type PipelineStepStatus = 'pending' | 'active' | 'completed';
 
