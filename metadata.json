@@ -1,0 +1,6 @@
+{
+  "name": "FactCheckAI",
+  "description": "Verify Claims. See the Evidence. AI-powered fact verification with source inspection, transparent reasoning, and evidence cross-referencing.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
