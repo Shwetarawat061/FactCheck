@@ -1,9 +1,5 @@
-from .gemini_service import GeminiService
-from .evidence_search import EvidenceSearchService
+from .verification_pipeline import verify_claim
 
 class FactCheckerService:
-    def __init__(self):
-        self.gemini = GeminiService()
-
     def check_claim(self, claim: str) -> dict:
-        return EvidenceSearchService.search_google_realtime(claim)
+        return verify_claim(claim)

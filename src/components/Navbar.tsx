@@ -53,10 +53,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span className="w-1.5 h-1.5 rounded-full bg-rose-600" />
                 Offline
               </span>
-            ) : (
+            ) : isOnline ? (
               <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-stone-100 text-stone-600 border border-stone-200">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
-                Live Grounded
+                Backend Online
+              </span>
+            ) : (
+              <span className="hidden sm:inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider bg-stone-100 text-stone-500 border border-stone-200">
+                Connecting
               </span>
             )}
           </div>

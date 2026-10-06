@@ -19,6 +19,9 @@ export const FactCheckResult: React.FC<FactCheckResultProps> = ({
   const [copied, setCopied] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [shareNotice, setShareNotice] = useState<string | null>(null);
+  const confidenceLabel = result.status === 'ok' && result.confidence > 0
+    ? ` (${result.confidence}% heuristic confidence)`
+    : '';
 
   const verdictConfig = VERDICT_CONFIG[result.verdict] || VERDICT_CONFIG['UNVERIFIED'];
 
@@ -39,7 +42,7 @@ export const FactCheckResult: React.FC<FactCheckResultProps> = ({
 
   const handleCopy = async () => {
     const text = `FactCheckAI Report
-Verdict: ${result.verdict} (AI confidence: ${result.confidence}%)
+Verdict: ${result.verdict}${confidenceLabel}
 Claim: "${result.claim}"
 
 Summary:
@@ -64,7 +67,7 @@ Verified with FactCheckAI Evidence Engine`;
       try {
         await navigator.share({
           title: `FactCheckAI: ${result.verdict} - "${result.claim}"`,
-          text: `FactCheckAI determined "${result.claim}" to be ${result.verdict} (${result.confidence}% AI confidence).`,
+          text: `FactCheckAI determined "${result.claim}" to be ${result.verdict}${confidenceLabel}.`,
           url: window.location.href
         });
       } catch (err) {

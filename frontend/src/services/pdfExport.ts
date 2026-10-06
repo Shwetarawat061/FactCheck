@@ -2,7 +2,7 @@ import { jsPDF } from 'jspdf';
 import { FactCheckResult, Evidence, ReasoningStep } from '../types/factCheck';
 
 /**
- * Generates an institutional-grade, publication-ready PDF fact-check report
+ * Generates a structured PDF fact-check report
  * directly from frontend state using jsPDF.
  */
 export const exportFactCheckToPdf = (result: FactCheckResult): void => {
@@ -45,7 +45,7 @@ export const exportFactCheckToPdf = (result: FactCheckResult): void => {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(8);
   doc.setTextColor(100, 116, 139); // slate-500
-  doc.text('FACTCHECKAI • INSTITUTIONAL VERIFICATION REPORT', margin, y);
+  doc.text('FACTCHECKAI • EVIDENCE VERIFICATION REPORT', margin, y);
   y += 16;
 
   // Primary Title
@@ -60,7 +60,7 @@ export const exportFactCheckToPdf = (result: FactCheckResult): void => {
   doc.setFontSize(8.5);
   doc.setTextColor(115, 115, 115);
   const checkedDate = result.checkedAt || new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-  const statusLabel = result.isDemo ? 'Verified Sample Archive' : 'Live Evidence Audit';
+  const statusLabel = result.status === 'inconclusive' ? 'Inconclusive' : 'Evidence Audit';
   doc.text(`Audit Date: ${checkedDate}  •  Status: ${statusLabel}  •  Protocol: Multi-Source Consensus`, margin, y);
   y += 14;
 
@@ -139,7 +139,7 @@ export const exportFactCheckToPdf = (result: FactCheckResult): void => {
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(16);
   doc.setTextColor(28, 25, 23);
-  const confText = (result.confidence !== null && result.confidence !== undefined)
+  const confText = result.status === 'ok' && result.confidence > 0
     ? `${result.confidence}%`
     : 'INCONCLUSIVE';
   doc.text(confText, pageWidth - margin - 16, y + 40, { align: 'right' });
@@ -318,7 +318,7 @@ export const exportFactCheckToPdf = (result: FactCheckResult): void => {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7);
   doc.setTextColor(120, 113, 108);
-  const disclaimerText = 'This report was synthesized by FactCheckAI utilizing retrieved evidence from public records, institutional databases, and journalistic consensus. Users should review cited sources before making critical legal, financial, or medical determinations.';
+  const disclaimerText = 'This report was synthesized from retrieved public web search results. Search coverage and source quality vary; users should review cited pages before making critical legal, financial, or medical decisions.';
   const disclaimerLines = doc.splitTextToSize(disclaimerText, contentWidth - 20);
   doc.text(disclaimerLines, margin + 10, y + 22);
 
@@ -335,7 +335,7 @@ export const exportFactCheckToPdf = (result: FactCheckResult): void => {
     doc.line(margin, pageHeight - 28, pageWidth - margin, pageHeight - 28);
 
     doc.text(
-      'Verified with FactCheckAI Evidence Engine • Multi-source institutional audit',
+      'FactCheckAI evidence synthesis • Review the cited sources',
       margin,
       pageHeight - 16
     );

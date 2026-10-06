@@ -61,7 +61,7 @@ export const HowItWorks: React.FC = () => {
               Structured Report
             </h3>
             <p className="text-xs text-stone-600 leading-relaxed">
-              Generates an objective verdict with heuristic confidence, verbatim quotes, dates (when available), and primary links.
+              Produces a heuristic assessment with excerpts checked against retrieved source text, dates (when available), and links.
             </p>
           </div>
         </div>

@@ -11,7 +11,7 @@ export const UseCases: React.FC = () => {
     {
       icon: GraduationCap,
       title: 'Researchers & Academics',
-      desc: 'Evaluate scientific, historical, and demographic claims against peer-reviewed registries and observational data.'
+      desc: 'Evaluate scientific, historical, and demographic claims against relevant public web search results.'
     },
     {
       icon: Users,

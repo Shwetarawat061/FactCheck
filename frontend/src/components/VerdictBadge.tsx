@@ -25,7 +25,7 @@ export const VERDICT_CONFIG: Record<
     text: 'text-emerald-800',
     border: 'border-emerald-200',
     icon: CheckCircle2,
-    description: 'The claim is supported by reliable, authoritative empirical consensus from multiple independent sources.'
+    description: 'Retrieved evidence from multiple independent domains supports the claim.'
   },
   'MOSTLY TRUE': {
     label: 'MOSTLY TRUE',
@@ -33,7 +33,7 @@ export const VERDICT_CONFIG: Record<
     text: 'text-teal-800',
     border: 'border-teal-200',
     icon: ShieldCheck,
-    description: 'The primary assertion is accurate, though minor nuances, qualifiers, or caveats exist.'
+    description: 'Retrieved evidence mostly supports the claim, though some nuance or caveats may remain.'
   },
   'MIXED': {
     label: 'MIXED',
@@ -49,7 +49,7 @@ export const VERDICT_CONFIG: Record<
     text: 'text-orange-800',
     border: 'border-orange-200',
     icon: MinusCircle,
-    description: 'The assertion contains significant inaccuracies with minimal or distorted supporting basis.'
+    description: 'Retrieved evidence mostly contradicts the claim, though some nuance or caveats may remain.'
   },
   'FALSE': {
     label: 'FALSE',
@@ -57,7 +57,7 @@ export const VERDICT_CONFIG: Record<
     text: 'text-rose-800',
     border: 'border-rose-200',
     icon: XCircle,
-    description: 'The claim is directly contradicted by reliable, peer-reviewed scientific or verified archival evidence.'
+    description: 'Retrieved evidence from multiple independent domains contradicts the claim.'
   },
   'UNVERIFIED': {
     label: 'UNVERIFIED',
@@ -65,7 +65,7 @@ export const VERDICT_CONFIG: Record<
     text: 'text-stone-700',
     border: 'border-stone-300',
     icon: HelpCircle,
-    description: 'No reliable, authoritative independent evidence could be retrieved to substantiate or refute this assertion.'
+    description: 'Available sources did not meet the evidence requirements to support or refute this claim.'
   }
 };
 
