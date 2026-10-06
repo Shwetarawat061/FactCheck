@@ -1,6 +1,6 @@
 """
 backend/app/routes/factcheck_routes.py
-POST /api/fact-check  ->  real result | inconclusive | failed (never mock)
+POST /api/fact-check  ->  real result | inconclusive | failed
 """
 import ipaddress
 import logging

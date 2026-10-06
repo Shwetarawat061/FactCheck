@@ -1,16 +1,16 @@
 # FactCheckAI — Evidence-First Claim Verification
 
-FactCheckAI is an authoritative, evidence-based fact-checking intelligence platform. It cross-references assertions against live web results via Google Search tool integration and institutional consensus using Gemini 3.8 Flash, providing transparent reasoning, calibrated confidence scores, and verbatim citations.
+FactCheckAI retrieves web results with Tavily and asks Gemini to assess only the retrieved source material. Citation excerpts must match retrieved text, and a verdict requires at least two decisive excerpts from independent domains. Results are inconclusive if more than half of candidate excerpts fail validation. Confidence is a heuristic, not a probability; insufficient evidence produces an inconclusive result.
 
 ---
 
 ## Key Features
 
 - **Open & Frictionless**: Instant claim verification with zero logins, accounts, or sign-up walls.
-- **Live Google Search Grounding**: Dynamic web retrieval fetches real-time results to ground findings in institutional data.
-- **Calibrated AI Confidence**: Objective confidence scores (50–99%) calibrated against source consensus.
+- **Live Web Retrieval**: Tavily retrieves public web results for each claim.
+- **Conservative Evidence Gates**: One source, one domain, or insufficient validated citations cannot produce a confident verdict.
 - **Structured Reasoning**: Step-by-step analytical audit explaining why an assertion is supported, contradicted, or mixed.
-- **Auditable Evidence**: Primary links, verbatim citations, publisher domains, and relationship tags (`SUPPORTS`, `CONTRADICTS`, `CONTEXT`).
+- **Auditable Evidence**: Retrieved links and source-text-matched excerpts, publisher domains, and relationship tags (`SUPPORTS`, `CONTRADICTS`, `CONTEXT`).
 - **Server-Side Security**: All Gemini API models execute exclusively on the backend, safeguarding secrets.
 
 ---
@@ -48,8 +48,7 @@ FactCheckAI/
 │   │   └── evidence.ts
 │   │
 │   ├── data/
-│   │   ├── examples.ts
-│   │   └── mockResults.ts
+│   │   └── examples.ts
 │   │
 │   ├── hooks/
 │   │   └── useFactCheck.ts
@@ -66,8 +65,8 @@ FactCheckAI/
 │   │   │   └── health_routes.py
 │   │   ├── services/
 │   │   │   ├── fact_checker.py
-│   │   │   ├── evidence_search.py
-│   │   │   └── gemini_service.py
+│   │   │   ├── verification_pipeline.py
+│   │   │   └── verification_gates.py
 │   │   ├── utils/
 │   │   │   ├── validators.py
 │   │   │   └── response.py
@@ -75,6 +74,8 @@ FactCheckAI/
 │   │
 │   ├── tests/
 │   │   ├── test_factcheck.py
+│   │   ├── test_verification_gates.py
+│   │   ├── test_verification_pipeline.py
 │   │   └── test_health.py
 │   │
 │   ├── requirements.txt
@@ -99,17 +100,21 @@ FactCheckAI/
 # Install dependencies
 npm install
 
-# Run development server
+# Run Vite in this terminal; /api is proxied to Flask on port 5000
 npm run dev
 ```
+
+Keep Vite and Flask running in separate terminals.
 
 ### 2. Backend Development (Flask + Python)
 
 ```bash
 cd backend
-python -m venv venv
-source venv/bin/activate
+python -m venv .venv
+.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
+copy .env.example .env
+# Set GEMINI_API_KEY and TAVILY_API_KEY in .env
 
 # Run backend tests
 pytest
@@ -122,5 +127,7 @@ python run.py
 
 | Variable | Scope | Description |
 |---|---|---|
-| `GEMINI_API_KEY` | Backend Only | Google Gemini API Key for grounded evidence synthesis |
-| `PORT` | Backend | Port number (default: 3000 for Node / 5000 for Flask) |
+| `GEMINI_API_KEY` | Backend Only | Google Gemini API key for evidence analysis |
+| `GEMINI_MODEL` | Backend Only | Gemini model (default: `gemini-2.5-flash`) |
+| `TAVILY_API_KEY` | Backend Only | Tavily API key for live web search; required |
+| `PORT` | Backend | Flask port (default: 5000) |

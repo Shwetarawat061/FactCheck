@@ -1,5 +1,5 @@
 // src/services/factCheckClient.ts
-// Single client for POST /api/fact-check. No mock data, no defaults, no fallback.
+// Single client for POST /api/fact-check. Failures are surfaced; no report is synthesized.
 // Any failure throws FactCheckError; the UI must show it instead of a report.
 
 export type Verdict =

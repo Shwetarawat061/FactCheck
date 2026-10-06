@@ -98,7 +98,7 @@ export const Landing: React.FC<LandingProps> = ({
           </div>
 
           <p className="mt-5 text-xs font-mono text-stone-500 tracking-wide">
-            Evidence-first fact checking • Live Google Search grounding • Institutional citations
+            Evidence-first fact checking • Live Tavily search • Retrieved-source citations
           </p>
 
           {/* Interactive Claim Input Section */}
@@ -136,7 +136,7 @@ export const Landing: React.FC<LandingProps> = ({
                 How FactCheckAI Works
               </h2>
               <p className="text-sm text-stone-600 mt-2 font-serif">
-                A multi-stage scientific verification engine grounded in real institutional sources, peer-reviewed registries, and audit trails.
+                A multi-stage claim analysis that evaluates retrieved public web sources and exposes its evidence trail.
               </p>
             </div>
 
@@ -162,7 +162,7 @@ export const Landing: React.FC<LandingProps> = ({
                   Retrieve Evidence
                 </h3>
                 <p className="text-xs text-stone-600 leading-relaxed">
-                  Queries academic journals, international bodies, regulatory filings, and audited journalistic databases.
+                  Searches the public web for relevant pages; coverage and source quality vary by claim.
                 </p>
               </div>
 
@@ -186,7 +186,7 @@ export const Landing: React.FC<LandingProps> = ({
                   Structured Verdict
                 </h3>
                 <p className="text-xs text-stone-600 leading-relaxed">
-                  Generates an objective verdict with calibrated AI confidence, verbatim source quotes, and primary links.
+                  Produces a heuristic assessment with excerpts checked against retrieved source text and direct links.
                 </p>
               </div>
 

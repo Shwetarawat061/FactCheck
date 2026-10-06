@@ -31,7 +31,7 @@ export const Footer: React.FC = () => {
             </h5>
             <ul className="space-y-2 text-xs text-stone-600">
               <li>Evidence-first methodology</li>
-              <li>Transparent primary sources</li>
+              <li>Traceable retrieved sources</li>
               <li>Non-partisan consensus audit</li>
               <li>Heuristic source-agreement confidence</li>
             </ul>
@@ -44,7 +44,7 @@ export const Footer: React.FC = () => {
             </h5>
             <ul className="space-y-2 text-xs text-stone-600">
               <li>React 19 + TypeScript + Vite</li>
-              <li>Web search retrieval + Gemini analysis</li>
+              <li>Tavily web search + Gemini analysis</li>
               <li>REST API Architecture</li>
             </ul>
           </div>
@@ -55,7 +55,7 @@ export const Footer: React.FC = () => {
               Search Scope
             </h5>
             <p className="text-xs text-stone-600 leading-relaxed">
-              Searches the public web for corroborating articles, scientific reporting, and indexed public records.
+              Retrieves public web pages for analysis. Source coverage and quality vary by claim.
             </p>
           </div>
 
