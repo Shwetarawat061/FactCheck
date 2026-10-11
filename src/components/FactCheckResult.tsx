@@ -6,6 +6,7 @@ import { EvidenceOverview } from './EvidenceOverview';
 import { EvidenceCard } from './EvidenceCard';
 import { ReasoningSection } from './ReasoningSection';
 import { SessionTrendSparkline } from './SessionTrendSparkline';
+import { TerminalStreamingText } from './TerminalStreamingText';
 import { exportFactCheckToPdf } from '../services/pdfExport';
 
 interface FactCheckResultProps {
@@ -227,9 +228,16 @@ AUDIT PROTOCOL: Multi-domain grounded consensus verification`;
           <span className="font-mono text-xs uppercase font-bold tracking-wider text-[#8B949E] block mb-2">
             // EXECUTIVE_SYNTHESIS
           </span>
-          <p className="text-sm sm:text-base text-[#C9D1D9] leading-relaxed font-sans bg-[#0D1117] p-4 rounded-xl border border-[#30363D]">
-            {result.summary}
-          </p>
+          <div className="bg-[#0D1117] p-4 rounded-xl border border-[#30363D]">
+            <TerminalStreamingText
+              key={`summary-${result.id}`}
+              text={result.summary}
+              className="text-sm sm:text-base text-[#C9D1D9] leading-relaxed font-sans"
+              speed={12}
+              chunkSize={3}
+              streamSound={true}
+            />
+          </div>
         </div>
 
         {/* Detailed Forensic Analysis */}
@@ -238,8 +246,15 @@ AUDIT PROTOCOL: Multi-domain grounded consensus verification`;
             <span className="font-mono text-xs uppercase font-bold tracking-wider text-[#8B949E] block mb-2">
               // DETAILED_FORENSIC_CROSS_EXAMINATION
             </span>
-            <div className="text-sm text-[#8B949E] leading-relaxed font-sans bg-[#0D1117] p-4 rounded-xl border border-[#30363D]">
-              <p>{result.analysis}</p>
+            <div className="bg-[#0D1117] p-4 rounded-xl border border-[#30363D]">
+              <TerminalStreamingText
+                key={`analysis-${result.id}`}
+                text={result.analysis}
+                className="text-sm text-[#8B949E] leading-relaxed font-sans"
+                speed={10}
+                chunkSize={4}
+                streamSound={false}
+              />
             </div>
           </div>
         )}

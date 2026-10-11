@@ -9,10 +9,12 @@ import { HowItWorks } from './components/HowItWorks';
 import { UseCases } from './components/UseCases';
 import { checkClaim, FactCheckError } from './services/factCheckClient';
 import { FactCheckResult as ResultType } from './types/factCheck';
+import { playTerminalSound } from './services/terminalAudio';
 import { ArrowRight, CheckCircle2, ShieldCheck, Database, Search, AlertCircle, RefreshCw, Terminal, Cpu } from 'lucide-react';
 
 export default function App() {
   const [claimInput, setClaimInput] = useState<string>('The Great Wall of China is visible from the Moon.');
+  const [activeAuditingClaim, setActiveAuditingClaim] = useState<string>('The Great Wall of China is visible from the Moon.');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [result, setResult] = useState<ResultType | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -26,16 +28,20 @@ export default function App() {
   });
 
   const handleCheckClaim = async (targetClaimText?: string) => {
-    const claimToVerify = (targetClaimText || claimInput).trim();
-    if (!claimToVerify || isLoading) return;
-
-    if (targetClaimText) {
-      setClaimInput(targetClaimText);
+    const claimToVerify = (targetClaimText !== undefined ? targetClaimText : claimInput).trim();
+    if (!claimToVerify) {
+      setErrorMessage('Please enter or select a factual statement to audit.');
+      playTerminalSound('error');
+      return;
     }
+    if (isLoading) return;
 
+    setActiveAuditingClaim(claimToVerify);
+    setClaimInput(claimToVerify);
     setIsLoading(true);
     setResult(null);
     setErrorMessage(null);
+    playTerminalSound('start');
 
     // Scroll to verification top smoothly
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -43,6 +49,7 @@ export default function App() {
     try {
       const data = await checkClaim(claimToVerify);
       setResult(data);
+      playTerminalSound('success');
       setSessionHistory((prev) => {
         const filtered = prev.filter(
           (p) => p.id !== data.id && p.claim.trim().toLowerCase() !== data.claim.trim().toLowerCase()
@@ -56,6 +63,7 @@ export default function App() {
         return updated;
       });
     } catch (e: any) {
+      playTerminalSound('error');
       setErrorMessage(
         e instanceof FactCheckError
           ? e.message
@@ -67,29 +75,36 @@ export default function App() {
   };
 
   const handleSelectHistoricalClaim = (histResult: ResultType) => {
+    playTerminalSound('click');
     setResult(histResult);
     setClaimInput(histResult.claim);
+    setActiveAuditingClaim(histResult.claim);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleCheckRelatedClaim = (claimText: string) => {
+    playTerminalSound('click');
     setClaimInput(claimText);
     handleCheckClaim(claimText);
   };
 
   const handleReset = () => {
+    playTerminalSound('click');
     setResult(null);
     setClaimInput('');
+    setActiveAuditingClaim('');
     setErrorMessage(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleExampleSelect = (claim: string) => {
+    playTerminalSound('click');
     setClaimInput(claim);
     handleCheckClaim(claim);
   };
 
   const handleNavigateSection = (section: 'verify' | 'how-it-works' | 'examples' | 'about') => {
+    playTerminalSound('click');
     if (section === 'verify') {
       if (result) {
         handleReset();
@@ -167,7 +182,7 @@ export default function App() {
         {isLoading && (
           <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
             <AnalysisLoader
-              claim={claimInput}
+              claim={activeAuditingClaim || claimInput || 'Target Assertion'}
             />
           </div>
         )}

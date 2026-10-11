@@ -1,6 +1,7 @@
 import React from 'react';
 import { EXAMPLE_CLAIMS } from '../data/examples';
-import { Plus, ArrowUpRight, Terminal } from 'lucide-react';
+import { Plus, Terminal } from 'lucide-react';
+import { playTerminalSound } from '../services/terminalAudio';
 
 interface ExampleClaimsProps {
   onSelectClaim: (claim: string) => void;
@@ -27,7 +28,10 @@ export const ExampleClaims: React.FC<ExampleClaimsProps> = ({ onSelectClaim, dis
             key={item.id}
             type="button"
             disabled={disabled}
-            onClick={() => onSelectClaim(item.claim)}
+            onClick={() => {
+              playTerminalSound('click');
+              onSelectClaim(item.claim);
+            }}
             className="group inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md border border-[#30363D] bg-[#161B22] hover:bg-[#21262D] hover:border-emerald-500/50 text-[#C9D1D9] hover:text-[#F0F6FC] font-mono text-xs transition-all duration-200 cursor-pointer shadow-xs hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.5)] active:scale-[0.98] disabled:opacity-40"
           >
             <span className="text-emerald-400/80 group-hover:text-emerald-400 font-mono text-[11px] font-bold">

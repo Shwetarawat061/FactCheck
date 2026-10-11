@@ -85,7 +85,7 @@ export async function searchWithDuckDuckGo(claim: string): Promise<RetrievedSour
       'User-Agent':
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
     },
-    signal: AbortSignal.timeout(15_000),
+    signal: AbortSignal.timeout(6_000),
   });
 
   if (!res.ok) {
@@ -138,6 +138,62 @@ export async function searchWithDuckDuckGo(claim: string): Promise<RetrievedSour
   return sources;
 }
 
+export async function searchWithWikipedia(claim: string): Promise<RetrievedSource[]> {
+  try {
+    const cleaned = claim.replace(/[^\w\s]/g, ' ').trim();
+    const query = encodeURIComponent(cleaned.split(/\s+/).slice(0, 5).join(' ') || claim);
+
+    const res = await fetch(
+      `https://en.wikipedia.org/w/api.php?action=opensearch&search=${query}&limit=4&namespace=0&format=json`,
+      { signal: AbortSignal.timeout(5000) }
+    );
+    if (!res.ok) return [];
+
+    const data = (await res.json()) as any;
+    const titles = Array.isArray(data?.[1]) ? data[1] : [];
+    const urls = Array.isArray(data?.[3]) ? data[3] : [];
+
+    if (titles.length === 0) return [];
+
+    const sources: RetrievedSource[] = [];
+    const extractPromises = titles.slice(0, 3).map(async (title: string, idx: number) => {
+      try {
+        const u = urls[idx] || `https://en.wikipedia.org/wiki/${encodeURIComponent(title.replace(/\s+/g, '_'))}`;
+        const exRes = await fetch(
+          `https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exintro=1&explaintext=1&titles=${encodeURIComponent(title)}&format=json`,
+          { signal: AbortSignal.timeout(4000) }
+        );
+        if (!exRes.ok) return null;
+        const exData = (await exRes.json()) as any;
+        const pages = Object.values(exData?.query?.pages || {}) as any[];
+        const extract = (pages[0]?.extract || '').trim();
+        if (extract && extract.length > 25) {
+          return {
+            url: u,
+            title: `${title} - Wikipedia`,
+            domain: 'en.wikipedia.org',
+            content: extract.slice(0, 3000),
+            date: '',
+            score: 0.92,
+          };
+        }
+      } catch {
+        return null;
+      }
+      return null;
+    });
+
+    const results = await Promise.all(extractPromises);
+    for (const r of results) {
+      if (r) sources.push(r);
+    }
+    return sources;
+  } catch (err: any) {
+    console.warn('Wikipedia search error:', err?.message);
+    return [];
+  }
+}
+
 export async function generateWithGemini(ai: GoogleGenAI, prompt: string): Promise<string> {
   const models = [
     process.env.GEMINI_MODEL,
@@ -177,21 +233,22 @@ export async function verifyClaimEngine(claimText: string): Promise<FactCheckRes
   const ai = new GoogleGenAI();
   let sources: RetrievedSource[] = [];
 
-  // Attempt Tavily if key is provided
+  // Concurrently execute multi-source retrieval (Tavily, DuckDuckGo, Wikipedia)
+  const searchTasks: Promise<RetrievedSource[]>[] = [];
   if (process.env.TAVILY_API_KEY) {
-    try {
-      sources = await searchWithTavily(claim, process.env.TAVILY_API_KEY);
-    } catch (err: any) {
-      console.warn('Tavily search failed, falling back to public web retrieval:', err?.message);
-    }
+    searchTasks.push(searchWithTavily(claim, process.env.TAVILY_API_KEY).catch(() => []));
   }
+  searchTasks.push(searchWithDuckDuckGo(claim).catch(() => []));
+  searchTasks.push(searchWithWikipedia(claim).catch(() => []));
 
-  // Fallback to web search
-  if (sources.length === 0) {
-    try {
-      sources = await searchWithDuckDuckGo(claim);
-    } catch (err: any) {
-      console.warn('Web search error:', err?.message);
+  const settleResults = await Promise.allSettled(searchTasks);
+  for (const r of settleResults) {
+    if (r.status === 'fulfilled' && Array.isArray(r.value)) {
+      for (const item of r.value) {
+        if (!sources.some((s) => s.url.toLowerCase() === item.url.toLowerCase())) {
+          sources.push(item);
+        }
+      }
     }
   }
 
