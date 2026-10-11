@@ -92,42 +92,54 @@ FactCheckAI/
 
 ---
 
-## Getting Started
+## Deployment
 
-### 1. Frontend Development (React + TypeScript + Vite)
+### 1. Deploy to Vercel (Full-Stack with Serverless APIs)
+
+FactCheckAI is structured for native zero-config deployment on [Vercel](https://vercel.com):
+
+1. Push this repository to GitHub.
+2. In the Vercel dashboard, click **"Add New Project"** and import the repository.
+3. Vercel automatically detects the Vite framework and `vercel.json` configuration.
+4. Under **Environment Variables**, add:
+   - `GEMINI_API_KEY`: Your Google Gemini API Key.
+   - `TAVILY_API_KEY`: *(Optional)* Your Tavily search API Key.
+5. Click **Deploy**. Both the Vite frontend and `/api` serverless functions (`/api/health` and `/api/fact-check`) will be live immediately.
+
+---
+
+### 2. Deploy to GitHub Pages (Static Frontend)
+
+FactCheckAI includes an automated GitHub Actions deployment workflow at `.github/workflows/deploy.yml`:
+
+1. In your GitHub repository, navigate to **Settings** → **Pages**.
+2. Under **Build and deployment**, set the source to **GitHub Actions**.
+3. Under **Settings** → **Secrets and variables** → **Actions**, add a repository secret or variable:
+   - `VITE_API_BASE_URL`: The URL of your deployed Vercel backend (*e.g.* `https://your-project.vercel.app`).
+4. Commit or push to `main` (or run the workflow manually via **Actions** → **Deploy to GitHub Pages** → **Run workflow**).
+5. The application will be deployed and available at `https://<username>.github.io/<repo-name>/`.
+
+---
+
+## Local Development
 
 ```bash
 # Install dependencies
 npm install
 
-# Run Vite in this terminal; /api is proxied to Flask on port 5000
+# Run full-stack dev server (Vite + Express on port 3000)
 npm run dev
+
+# Run automated endpoint and schema tests
+npm run test:api
 ```
 
-Keep Vite and Flask running in separate terminals.
-
-### 2. Backend Development (Flask + Python)
-
-```bash
-cd backend
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-copy .env.example .env
-# Set GEMINI_API_KEY and TAVILY_API_KEY in .env
-
-# Run backend tests
-pytest
-
-# Start Flask server
-python run.py
-```
-
-### 3. Environment Variables
+### Environment Variables
 
 | Variable | Scope | Description |
 |---|---|---|
-| `GEMINI_API_KEY` | Backend Only | Google Gemini API key for evidence analysis |
-| `GEMINI_MODEL` | Backend Only | Gemini model (default: `gemini-2.5-flash`) |
-| `TAVILY_API_KEY` | Backend Only | Tavily API key for live web search; required |
-| `PORT` | Backend | Flask port (default: 5000) |
+| `GEMINI_API_KEY` | Server / Vercel API | Google Gemini API key for grounded evidence synthesis |
+| `TAVILY_API_KEY` | Server / Vercel API | *(Optional)* Tavily API key for search retrieval |
+| `VITE_API_BASE_URL` | Client (Build-time) | Base URL for APIs when deployed statically on GitHub Pages |
+| `PORT` | Local Dev Server | Server port (default: 3000) |
+

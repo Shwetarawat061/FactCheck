@@ -1,74 +1,72 @@
 import React from 'react';
+import { Terminal } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="w-full bg-white border-t border-stone-200 mt-20 text-stone-600 text-xs">
+    <footer className="w-full bg-[#0D1117] border-t border-[#30363D] mt-20 text-[#8B949E] text-xs font-mono">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
           
           {/* Brand Info */}
           <div className="space-y-3 md:col-span-1">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-stone-900 text-white flex items-center justify-center font-serif font-black text-xs">
-                FC
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-md bg-[#161B22] border border-[#30363D] text-emerald-400 flex items-center justify-center font-mono font-bold text-xs shadow-2xs">
+                <Terminal className="w-3.5 h-3.5" />
               </div>
-              <span className="font-serif font-bold text-stone-900 text-base">
-                FactCheckAI
+              <span className="font-mono font-bold text-[#F0F6FC] text-base">
+                FACTCHECK<span className="text-emerald-400">.AI</span>
               </span>
             </div>
-            <p className="text-xs text-stone-500 leading-relaxed font-serif italic">
-              "Verify Claims. See the Evidence."
-            </p>
-            <p className="text-[11px] text-stone-500 leading-relaxed">
-              AI-assisted evidence synthesis and claim verification. Proof, not just a verdict.
+            <p className="text-xs text-[#8B949E] leading-relaxed">
+              Forensic data engine for live evidentiary fact verification and multi-domain consensus cross-examination.
             </p>
           </div>
 
-          {/* Core Principles */}
+          {/* Verification Ethos */}
           <div>
-            <h5 className="font-mono text-xs uppercase font-bold text-stone-900 mb-3 tracking-wider">
-              Verification Ethos
+            <h5 className="font-mono text-xs uppercase font-bold text-[#F0F6FC] mb-3 tracking-wider">
+              // AUDIT_STANDARDS
             </h5>
-            <ul className="space-y-2 text-xs text-stone-600">
+            <ul className="space-y-2 text-xs text-[#8B949E]">
               <li>Evidence-first methodology</li>
-              <li>Traceable retrieved sources</li>
-              <li>Non-partisan consensus audit</li>
-              <li>Heuristic source-agreement confidence</li>
+              <li>Multi-domain corroboration gate</li>
+              <li>Verbatim citation tracing</li>
+              <li>Zero synthetic hallucination</li>
             </ul>
           </div>
 
-          {/* Resources & Architecture */}
+          {/* Architecture */}
           <div>
-            <h5 className="font-mono text-xs uppercase font-bold text-stone-900 mb-3 tracking-wider">
-              Architecture
+            <h5 className="font-mono text-xs uppercase font-bold text-[#F0F6FC] mb-3 tracking-wider">
+              // ARCHITECTURE
             </h5>
-            <ul className="space-y-2 text-xs text-stone-600">
+            <ul className="space-y-2 text-xs text-[#8B949E]">
               <li>React 19 + TypeScript + Vite</li>
-              <li>Tavily web search + Gemini analysis</li>
-              <li>REST API Architecture</li>
+              <li>Live web search retrieval + Gemini</li>
+              <li>Server-side secure proxy pipeline</li>
             </ul>
           </div>
 
-          {/* Web Retrieval Scope */}
+          {/* Retrieval Scope */}
           <div>
-            <h5 className="font-mono text-xs uppercase font-bold text-stone-900 mb-3 tracking-wider">
-              Search Scope
+            <h5 className="font-mono text-xs uppercase font-bold text-[#F0F6FC] mb-3 tracking-wider">
+              // DATA_PROVENANCE
             </h5>
-            <p className="text-xs text-stone-600 leading-relaxed">
-              Retrieves public web pages for analysis. Source coverage and quality vary by claim.
+            <p className="text-xs text-[#8B949E] leading-relaxed">
+              Exclusively audits publicly indexed web documents and authoritative institutional records. Does not rely on ungrounded model assumptions.
             </p>
           </div>
 
         </div>
 
-        <div className="pt-8 border-t border-stone-150 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-stone-400">
+        <div className="pt-8 border-t border-[#21262D] flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-[#484F58]">
           <div>
-            © {new Date().getFullYear()} FactCheckAI. All rights reserved.
+            © {new Date().getFullYear()} FactCheckAI Forensic Systems. All rights reserved.
           </div>
           <div className="flex items-center gap-6">
-            <span className="hover:text-stone-700 cursor-pointer">Privacy Policy</span>
-            <span className="hover:text-stone-700 cursor-pointer">Terms of Service</span>
-            <span className="hover:text-stone-700 cursor-pointer">Methodology</span>
+            <span className="hover:text-emerald-400 transition-colors cursor-pointer">// PRIVACY</span>
+            <span className="hover:text-emerald-400 transition-colors cursor-pointer">// TERMS</span>
+            <span className="hover:text-emerald-400 transition-colors cursor-pointer">// METHODOLOGY</span>
           </div>
         </div>
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import { EXAMPLE_CLAIMS } from '../data/examples';
+import { Plus, ArrowUpRight, Terminal } from 'lucide-react';
 
 interface ExampleClaimsProps {
   onSelectClaim: (claim: string) => void;
@@ -8,26 +9,36 @@ interface ExampleClaimsProps {
 
 export const ExampleClaims: React.FC<ExampleClaimsProps> = ({ onSelectClaim, disabled = false }) => {
   return (
-    <div className="w-full mt-4">
-      <div className="flex items-center justify-between mb-2.5">
-        <span className="font-mono text-xs text-stone-500 uppercase tracking-wider">
-          Try an example:
+    <div className="w-full mt-5">
+      <div className="flex items-center justify-between mb-3">
+        <span className="font-mono text-xs text-[#8B949E] uppercase tracking-wider flex items-center gap-1.5">
+          <Terminal className="w-3.5 h-3.5 text-emerald-400" />
+          <span>SUGGESTED_INQUEST_QUERIES:</span>
         </span>
-        <span className="text-[11px] text-stone-400 italic">
-          Test inputs only • Subject to verification
+        <span className="font-mono text-[11px] text-[#484F58]">
+          CLICK CHIP TO POPULATE & AUDIT
         </span>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      {/* Clickable Query Chips with subtle + icon */}
+      <div className="flex flex-wrap gap-2.5">
         {EXAMPLE_CLAIMS.map((item) => (
           <button
             key={item.id}
             type="button"
             disabled={disabled}
             onClick={() => onSelectClaim(item.claim)}
-            className="text-xs text-stone-700 bg-white hover:bg-stone-50 hover:text-stone-900 border border-stone-200/90 rounded-lg px-3 py-1.5 transition-all text-left shadow-2xs hover:border-stone-300 disabled:opacity-50 cursor-pointer active:scale-[0.98]"
+            className="group inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md border border-[#30363D] bg-[#161B22] hover:bg-[#21262D] hover:border-emerald-500/50 text-[#C9D1D9] hover:text-[#F0F6FC] font-mono text-xs transition-all duration-200 cursor-pointer shadow-xs hover:-translate-y-0.5 hover:shadow-[0_4px_12px_rgba(0,0,0,0.5)] active:scale-[0.98] disabled:opacity-40"
           >
-            "{item.claim}"
+            <span className="text-emerald-400/80 group-hover:text-emerald-400 font-mono text-[11px] font-bold">
+              {item.category}:
+            </span>
+            <span className="truncate max-w-[260px] sm:max-w-none text-[#C9D1D9] group-hover:text-white">
+              "{item.claim}"
+            </span>
+            <div className="w-4 h-4 rounded bg-[#0D1117] border border-[#30363D] group-hover:border-emerald-500/50 flex items-center justify-center shrink-0 ml-0.5 group-hover:bg-emerald-950/40 transition-colors">
+              <Plus className="w-2.5 h-2.5 text-[#8B949E] group-hover:text-emerald-400 group-hover:rotate-90 transition-transform duration-200" />
+            </div>
           </button>
         ))}
       </div>

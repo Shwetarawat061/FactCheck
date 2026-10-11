@@ -100,7 +100,9 @@ export async function checkClaim(claim: string, signal?: AbortSignal): Promise<F
       err?.name === 'AbortError' ? 'TIMEOUT' : 'BACKEND_UNREACHABLE',
       err?.name === 'AbortError'
         ? 'Verification timed out. No result was produced.'
-        : 'Could not reach the verification server. No result was produced.'
+        : BASE
+        ? `Could not reach verification server at ${BASE}. Please verify server status.`
+        : 'Could not reach the verification server. If deployed on GitHub Pages, configure VITE_API_BASE_URL pointing to your Vercel backend.'
     );
   } finally {
     clearTimeout(timer);

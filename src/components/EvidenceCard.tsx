@@ -1,5 +1,5 @@
 import React from 'react';
-import { ExternalLink, Check, X, Info, Globe, AlertTriangle } from 'lucide-react';
+import { ExternalLink, Check, X, Info, Globe, AlertTriangle, FileText } from 'lucide-react';
 import { Evidence, EvidenceRelationship } from '../types/factCheck';
 
 interface EvidenceCardProps {
@@ -18,29 +18,29 @@ const RELATIONSHIP_CONFIG: Record<
   }
 > = {
   'SUPPORTS': {
-    label: 'SUPPORTS',
-    bg: 'bg-emerald-50',
-    text: 'text-emerald-800',
-    border: 'border-emerald-200',
+    label: 'CORROBORATES',
+    bg: 'bg-emerald-950/40',
+    text: 'text-emerald-400',
+    border: 'border-emerald-500/50',
     icon: Check
   },
   'CONTRADICTS': {
     label: 'CONTRADICTS',
-    bg: 'bg-rose-50',
-    text: 'text-rose-800',
-    border: 'border-rose-200',
+    bg: 'bg-rose-950/40',
+    text: 'text-rose-400',
+    border: 'border-rose-500/50',
     icon: X
   },
   'CONTEXT': {
-    label: 'CONTEXT',
-    bg: 'bg-sky-50',
-    text: 'text-sky-800',
-    border: 'border-sky-200',
+    label: 'CONTEXT_ONLY',
+    bg: 'bg-sky-950/40',
+    text: 'text-sky-300',
+    border: 'border-sky-500/50',
     icon: Info
   }
 };
 
-export const EvidenceCard: React.FC<EvidenceCardProps> = ({ evidence }) => {
+export const EvidenceCard: React.FC<EvidenceCardProps> = ({ evidence, index = 0 }) => {
   const relConfig = RELATIONSHIP_CONFIG[evidence.relationship] || RELATIONSHIP_CONFIG['CONTEXT'];
   const RelIcon = relConfig.icon;
 
@@ -55,45 +55,46 @@ export const EvidenceCard: React.FC<EvidenceCardProps> = ({ evidence }) => {
   }
 
   const isReachable = evidence.urlReachable !== false;
-  const displayDate = evidence.date && evidence.date.trim() ? evidence.date.trim() : 'Date unavailable';
+  const displayDate = evidence.date && evidence.date.trim() ? evidence.date.trim() : 'INDEXED_RECENT';
 
   return (
-    <div className="bg-white rounded-xl border border-stone-200/90 shadow-2xs p-5 sm:p-6 transition-all hover:border-stone-300 hover:shadow-xs group">
-      {/* Top Meta Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-3.5">
-        <div className="flex items-center gap-2 min-w-0">
-          <div className="w-6 h-6 rounded-md bg-stone-100 flex items-center justify-center text-stone-600 shrink-0">
-            <Globe className="w-3.5 h-3.5" />
+    <div className="bg-[#161B22] rounded-xl border border-[#30363D] p-5 sm:p-6 transition-all duration-200 hover:-translate-y-1 hover:border-[#58A6FF]/50 hover:shadow-[0_10px_30px_rgba(0,0,0,0.6)] group">
+      
+      {/* Dossier Header Meta Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-3.5 pb-3 border-b border-[#21262D]">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-6 h-6 rounded bg-[#0D1117] border border-[#30363D] flex items-center justify-center text-emerald-400 shrink-0 font-mono text-[10px]">
+            {String(index + 1).padStart(2, '0')}
           </div>
           <div className="truncate">
-            <span className="font-semibold text-xs text-stone-900 block truncate">
+            <span className="font-mono font-bold text-xs text-[#F0F6FC] block truncate">
               {evidence.source}
             </span>
-            <span className="font-mono text-[11px] text-stone-600 truncate block">
-              {domain}
+            <span className="font-mono text-[11px] text-[#8B949E] truncate block">
+              // {domain}
             </span>
           </div>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          {/* Link reachable verification status */}
+          {/* Link status */}
           {!isReachable && (
-            <span className="inline-flex items-center gap-1 font-mono text-[11px] text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
-              <AlertTriangle className="w-3 h-3 text-amber-600" />
-              <span>Link could not be verified</span>
+            <span className="inline-flex items-center gap-1 font-mono text-[10px] text-amber-300 bg-amber-950/40 px-2 py-0.5 rounded border border-amber-500/40">
+              <AlertTriangle className="w-3 h-3 text-amber-400" />
+              <span>UNVERIFIED_URI</span>
             </span>
           )}
 
           {/* Relevance score */}
           {typeof evidence.relevanceScore === 'number' && (
-            <span className="hidden sm:inline-flex items-center gap-1 font-mono text-[11px] text-stone-600 bg-stone-100 px-2 py-0.5 rounded border border-stone-200">
-              <span>{Math.round(evidence.relevanceScore)}% Relevance</span>
+            <span className="hidden sm:inline-flex items-center gap-1 font-mono text-[10px] text-[#8B949E] bg-[#0D1117] px-2 py-0.5 rounded border border-[#30363D]">
+              <span>RELEVANCE: {Math.round(evidence.relevanceScore)}%</span>
             </span>
           )}
 
           {/* Relationship Badge */}
           <span
-            className={`inline-flex items-center gap-1 text-[11px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${relConfig.bg} ${relConfig.text} ${relConfig.border}`}
+            className={`inline-flex items-center gap-1 text-[11px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${relConfig.bg} ${relConfig.text} ${relConfig.border} shadow-2xs`}
           >
             <RelIcon className="w-3 h-3 shrink-0" />
             <span>{relConfig.label}</span>
@@ -102,21 +103,22 @@ export const EvidenceCard: React.FC<EvidenceCardProps> = ({ evidence }) => {
       </div>
 
       {/* Title */}
-      <h4 className="text-base font-medium text-stone-900 leading-snug mb-3 font-serif">
+      <h4 className="text-sm sm:text-base font-mono font-semibold text-[#F0F6FC] leading-snug mb-3 group-hover:text-white transition-colors">
         {evidence.title}
       </h4>
 
-      {/* Verbatim Extracted Excerpt */}
+      {/* Terminal Diff Evidentiary Quote Excerpt */}
       {evidence.quote && (
-        <div className="relative pl-3.5 my-3 border-l-2 border-stone-300/80 italic text-xs sm:text-sm text-stone-700 leading-relaxed bg-stone-50/50 py-2 pr-3 rounded-r-md">
-          "{evidence.quote}"
+        <div className="relative pl-3.5 my-3 border-l-2 border-emerald-500/60 font-mono text-xs sm:text-[13px] text-[#C9D1D9] leading-relaxed bg-[#0D1117] py-2.5 pr-3 rounded-r-md">
+          <span className="text-emerald-400 font-bold mr-1.5 select-none">+</span>
+          <span className="text-[#E6EDF3]">"{evidence.quote}"</span>
         </div>
       )}
 
-      {/* Bottom Bar: Date & External Link Button */}
-      <div className="flex items-center justify-between pt-3 mt-3 border-t border-stone-100 text-xs">
-        <span className="text-stone-500 font-mono text-[11px]">
-          {displayDate}
+      {/* Dossier Bottom Bar */}
+      <div className="flex items-center justify-between pt-3 mt-3 border-t border-[#21262D] text-xs font-mono">
+        <span className="text-[#8B949E] text-[11px]">
+          REC_DATE: {displayDate}
         </span>
 
         {evidence.url && (
@@ -124,13 +126,14 @@ export const EvidenceCard: React.FC<EvidenceCardProps> = ({ evidence }) => {
             href={evidence.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 text-xs font-semibold text-stone-900 hover:text-stone-700 group-hover:translate-x-0.5 transition-all"
+            className="inline-flex items-center gap-1 text-xs font-mono font-semibold text-emerald-400 hover:text-emerald-300 group-hover:translate-x-0.5 transition-all"
           >
-            <span>Open Source</span>
+            <span>AUDIT_PRIMARY_SOURCE</span>
             <ExternalLink className="w-3 h-3" />
           </a>
         )}
       </div>
+
     </div>
   );
 };

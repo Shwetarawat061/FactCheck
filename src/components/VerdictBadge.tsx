@@ -20,52 +20,52 @@ export const VERDICT_CONFIG: Record<
   }
 > = {
   'TRUE': {
-    label: 'TRUE',
-    bg: 'bg-emerald-50',
-    text: 'text-emerald-800',
-    border: 'border-emerald-200',
+    label: 'VERIFIED_TRUE',
+    bg: 'bg-emerald-950/50',
+    text: 'text-emerald-400',
+    border: 'border-emerald-500/60',
     icon: CheckCircle2,
-    description: 'Retrieved evidence from multiple independent domains supports the claim.'
+    description: 'Empirical corroboration confirmed across multiple independent verified top-level domains.'
   },
   'MOSTLY TRUE': {
-    label: 'MOSTLY TRUE',
-    bg: 'bg-teal-50',
-    text: 'text-teal-800',
-    border: 'border-teal-200',
+    label: 'MOSTLY_TRUE',
+    bg: 'bg-teal-950/50',
+    text: 'text-teal-300',
+    border: 'border-teal-500/60',
     icon: ShieldCheck,
-    description: 'Retrieved evidence mostly supports the claim, though some nuance or caveats may remain.'
+    description: 'Core assertion is supported by empirical records, though minor context nuances exist.'
   },
   'MIXED': {
-    label: 'MIXED',
-    bg: 'bg-amber-50',
-    text: 'text-amber-800',
-    border: 'border-amber-200',
+    label: 'MIXED_SIGNALS',
+    bg: 'bg-amber-950/50',
+    text: 'text-amber-400',
+    border: 'border-amber-500/60',
     icon: AlertTriangle,
-    description: 'The claim contains both factual elements and conflicting assertions or significant missing context.'
+    description: 'Conflicting or partial evidence detected across examined sources; significant qualifiers required.'
   },
   'MOSTLY FALSE': {
-    label: 'MOSTLY FALSE',
-    bg: 'bg-orange-50',
-    text: 'text-orange-800',
-    border: 'border-orange-200',
+    label: 'MOSTLY_FALSE',
+    bg: 'bg-orange-950/50',
+    text: 'text-orange-400',
+    border: 'border-orange-500/60',
     icon: MinusCircle,
-    description: 'Retrieved evidence mostly contradicts the claim, though some nuance or caveats may remain.'
+    description: 'Contradicted by authoritative evidence; only distorted or context-deficient basis exists.'
   },
   'FALSE': {
-    label: 'FALSE',
-    bg: 'bg-rose-50',
-    text: 'text-rose-800',
-    border: 'border-rose-200',
+    label: 'REFUTED_FALSE',
+    bg: 'bg-rose-950/50',
+    text: 'text-rose-400',
+    border: 'border-rose-500/60',
     icon: XCircle,
-    description: 'Retrieved evidence from multiple independent domains contradicts the claim.'
+    description: 'Empirically disproven and directly contradicted by authoritative primary source records.'
   },
   'UNVERIFIED': {
-    label: 'UNVERIFIED',
-    bg: 'bg-stone-100',
-    text: 'text-stone-700',
-    border: 'border-stone-300',
+    label: 'INCONCLUSIVE',
+    bg: 'bg-[#21262D]',
+    text: 'text-[#8B949E]',
+    border: 'border-[#30363D]',
     icon: HelpCircle,
-    description: 'Available sources did not meet the evidence requirements to support or refute this claim.'
+    description: 'Available indexed sources did not meet the multi-domain verification threshold to substantiate or refute.'
   }
 };
 
@@ -80,7 +80,7 @@ export const VerdictBadge: React.FC<VerdictBadgeProps> = ({
   const sizeClasses = {
     sm: 'text-[11px] px-2 py-0.5 gap-1.5 font-medium',
     md: 'text-xs px-2.5 py-1 gap-2 font-semibold',
-    lg: 'text-sm sm:text-base px-4 py-1.5 gap-2.5 font-bold tracking-tight'
+    lg: 'text-sm sm:text-base px-4 py-2 gap-2.5 font-bold tracking-wider'
   }[size];
 
   const iconSizes = {
@@ -91,7 +91,7 @@ export const VerdictBadge: React.FC<VerdictBadgeProps> = ({
 
   return (
     <span
-      className={`inline-flex items-center rounded-md border font-mono uppercase tracking-wider ${config.bg} ${config.text} ${config.border} ${sizeClasses}`}
+      className={`inline-flex items-center rounded-md border font-mono uppercase tracking-wider ${config.bg} ${config.text} ${config.border} ${sizeClasses} shadow-sm`}
     >
       {showIcon && <Icon className={`${iconSizes} shrink-0`} />}
       <span>{config.label}</span>

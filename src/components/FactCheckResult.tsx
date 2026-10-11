@@ -1,24 +1,42 @@
 import React, { useState } from 'react';
-import { Share2, Copy, Check, RotateCcw, ShieldCheck, Sparkles, ExternalLink, FileDown, Loader2 } from 'lucide-react';
+import { Share2, Copy, Check, RotateCcw, ShieldCheck, Sparkles, ExternalLink, FileDown, Loader2, Terminal, FileText } from 'lucide-react';
 import { FactCheckResult as ResultType } from '../types/factCheck';
 import { VerdictBadge, VERDICT_CONFIG } from './VerdictBadge';
 import { EvidenceOverview } from './EvidenceOverview';
 import { EvidenceCard } from './EvidenceCard';
 import { ReasoningSection } from './ReasoningSection';
+import { SessionTrendSparkline } from './SessionTrendSparkline';
 import { exportFactCheckToPdf } from '../services/pdfExport';
 
 interface FactCheckResultProps {
   result: ResultType;
+  sessionHistory?: ResultType[];
+  onSelectHistoricalClaim?: (result: ResultType) => void;
+  onCheckRelatedClaim?: (claim: string) => void;
   onReset: () => void;
 }
 
 export const FactCheckResult: React.FC<FactCheckResultProps> = ({
   result,
+  sessionHistory,
+  onSelectHistoricalClaim,
+  onCheckRelatedClaim,
   onReset
 }) => {
   const [copied, setCopied] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [shareNotice, setShareNotice] = useState<string | null>(null);
+
+  const [fallbackHistory] = useState<ResultType[]>(() => {
+    try {
+      const stored = sessionStorage.getItem('factcheck_session_history');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const activeSessionHistory = sessionHistory || fallbackHistory;
   const confidenceLabel = result.status === 'ok' && result.confidence > 0
     ? ` (${result.confidence}% heuristic confidence)`
     : '';
@@ -29,11 +47,11 @@ export const FactCheckResult: React.FC<FactCheckResultProps> = ({
     try {
       setIsExportingPdf(true);
       exportFactCheckToPdf(result);
-      setShareNotice('PDF verification report downloaded successfully.');
+      setShareNotice('Evidentiary PDF verification dossier exported successfully.');
       setTimeout(() => setShareNotice(null), 4000);
     } catch (err) {
       console.error('Failed to generate PDF:', err);
-      setShareNotice('Failed to generate PDF report. Please try again.');
+      setShareNotice('Failed to generate PDF dossier. Please retry.');
       setTimeout(() => setShareNotice(null), 4000);
     } finally {
       setIsExportingPdf(false);
@@ -41,17 +59,17 @@ export const FactCheckResult: React.FC<FactCheckResultProps> = ({
   };
 
   const handleCopy = async () => {
-    const text = `FactCheckAI Report
-Verdict: ${result.verdict}${confidenceLabel}
-Claim: "${result.claim}"
+    const text = `FACTCHECK.AI // FORENSIC DOSSIER REPORT
+VERDICT: ${result.verdict}${confidenceLabel}
+CLAIM: "${result.claim}"
 
-Summary:
+SUMMARY:
 ${result.summary}
 
-Evidence Sources Reviewed (${result.evidence.length}):
-${result.evidence.map(e => `• ${e.source} (${e.relationship}): "${e.quote}" - ${e.url}`).join('\n')}
+EVIDENCE AUDIT TRAIL (${result.evidence.length} sources):
+${result.evidence.map(e => `[${e.relationship}] ${e.source}: "${e.quote}" - ${e.url}`).join('\n')}
 
-Verified with FactCheckAI Evidence Engine`;
+AUDIT PROTOCOL: Multi-domain grounded consensus verification`;
 
     try {
       await navigator.clipboard.writeText(text);
@@ -67,7 +85,7 @@ Verified with FactCheckAI Evidence Engine`;
       try {
         await navigator.share({
           title: `FactCheckAI: ${result.verdict} - "${result.claim}"`,
-          text: `FactCheckAI determined "${result.claim}" to be ${result.verdict}${confidenceLabel}.`,
+          text: `FactCheckAI forensic analysis classified "${result.claim}" as ${result.verdict}${confidenceLabel}.`,
           url: window.location.href
         });
       } catch (err) {
@@ -75,35 +93,36 @@ Verified with FactCheckAI Evidence Engine`;
       }
     } else {
       await handleCopy();
-      setShareNotice('Report summary copied to clipboard for sharing!');
+      setShareNotice('Forensic audit record copied to clipboard!');
       setTimeout(() => setShareNotice(null), 3500);
     }
   };
 
   return (
-    <article className="w-full bg-white rounded-2xl border border-stone-200/90 shadow-sm overflow-hidden animate-in fade-in duration-200">
+    <article className="w-full bg-[#161B22] rounded-xl border border-[#30363D] shadow-[0_12px_40px_rgba(0,0,0,0.6)] overflow-hidden animate-in fade-in duration-200 text-[#C9D1D9] terminal-scanlines relative">
       
-      {/* Top Banner Strip */}
-      <div className="border-b border-stone-200 px-6 py-4 bg-[#faf9f6] flex flex-wrap items-center justify-between gap-3">
+      {/* Dossier Terminal Header Banner */}
+      <div className="border-b border-[#30363D] px-6 py-4 bg-[#0D1117] flex flex-wrap items-center justify-between gap-3 font-mono">
         <div className="flex items-center gap-3">
-          <span className="font-mono text-xs font-bold uppercase tracking-wider text-stone-700">
-            FACT CHECK RESULT
-          </span>
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-400">
+            <Terminal className="w-4 h-4" />
+            <span>EVIDENTIARY_DOSSIER // {result.id || 'AUDIT_REF'}</span>
+          </div>
 
           {result.status === 'inconclusive' || result.verdict === 'UNVERIFIED' ? (
-            <span className="px-2 py-0.5 rounded text-[11px] font-mono font-medium uppercase tracking-wider bg-slate-100 text-slate-800 border border-slate-300 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-slate-600" />
+            <span className="px-2 py-0.5 rounded text-[11px] uppercase tracking-wider bg-[#21262D] text-[#8B949E] border border-[#30363D] flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#8B949E]" />
               INCONCLUSIVE
             </span>
           ) : (
-            <span className="px-2 py-0.5 rounded text-[11px] font-mono font-medium uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200 flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-              LIVE EVIDENCE AUDIT
+            <span className="px-2 py-0.5 rounded text-[11px] uppercase tracking-wider bg-emerald-950/40 text-emerald-300 border border-emerald-500/50 flex items-center gap-1.5 shadow-2xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              GROUNDED_CONSENSUS
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-stone-500 font-mono">
+        <div className="flex items-center gap-3 text-xs text-[#8B949E]">
           <span>
             {(() => {
               try {
@@ -119,98 +138,107 @@ Verified with FactCheckAI Evidence Engine`;
 
       <div className="p-6 sm:p-9 space-y-8">
         
-        {/* Verdict Hero Card */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 p-6 rounded-xl border border-stone-200 bg-stone-50/70">
-          <div className="space-y-2">
+        {/* Verdict Hero Card with Terminal Diff Styling */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 p-6 rounded-xl border border-[#30363D] bg-[#0D1117] transition-all duration-200 hover:border-[#58A6FF]/40 hover:shadow-md">
+          <div className="space-y-2.5">
             <div className="flex items-center gap-3 flex-wrap">
               <VerdictBadge verdict={result.verdict} size="lg" />
-              {result.status !== 'inconclusive' && result.verdict !== 'UNVERIFIED' && result.confidence > 0 ? (
+              {result.status !== 'ok' ? null : (
                 <span
                   title="Confidence is a heuristic based on source agreement, not a statistical probability"
-                  className="font-mono text-xs sm:text-sm font-semibold text-stone-700 tabular-nums cursor-help"
+                  className="font-mono text-xs sm:text-sm font-semibold text-emerald-400 tabular-nums cursor-help"
                 >
-                  Confidence: {result.confidence}% <span className="text-[10px] text-stone-400 font-normal">(heuristic)</span>
+                  CONFIDENCE: {result.confidence}% <span className="text-[10px] text-[#8B949E] font-normal">[HEURISTIC_AGREEMENT]</span>
                 </span>
-              ) : null}
+              )}
             </div>
-            <p className="text-xs text-stone-600 max-w-xl">
+            <p className="text-xs font-mono text-[#8B949E] max-w-xl">
               {verdictConfig.description}
             </p>
           </div>
 
-          {/* Quick Actions in Banner */}
+          {/* Quick Actions Bar */}
           <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={handleExportPdf}
               disabled={isExportingPdf}
-              className="p-2 sm:px-3 rounded-lg border border-stone-800 bg-stone-900 text-white hover:bg-stone-800 text-xs font-semibold flex items-center gap-1.5 transition-all shadow-2xs active:scale-[0.98] cursor-pointer disabled:opacity-50"
-              title="Download structured PDF fact-check report"
+              className="p-2 sm:px-3 rounded-md border border-emerald-500/50 bg-emerald-950/30 text-emerald-300 hover:bg-emerald-900/40 text-xs font-mono font-semibold flex items-center gap-1.5 transition-all shadow-xs active:scale-[0.98] cursor-pointer disabled:opacity-50 hover:-translate-y-0.5"
+              title="Download structured evidentiary PDF dossier"
             >
               {isExportingPdf ? (
-                <Loader2 className="w-4 h-4 animate-spin text-stone-300" />
+                <Loader2 className="w-4 h-4 animate-spin text-emerald-400" />
               ) : (
                 <FileDown className="w-4 h-4 text-emerald-400" />
               )}
-              <span>{isExportingPdf ? 'Exporting...' : 'Export PDF'}</span>
+              <span>{isExportingPdf ? 'EXPORTING...' : 'EXPORT_PDF'}</span>
             </button>
 
             <button
               type="button"
               onClick={handleShare}
-              className="p-2 rounded-lg border border-stone-200 bg-white text-stone-700 hover:bg-stone-50 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+              className="p-2 rounded-md border border-[#30363D] bg-[#161B22] text-[#C9D1D9] hover:bg-[#21262D] hover:text-white text-xs font-mono font-medium flex items-center gap-1.5 transition-colors cursor-pointer hover:-translate-y-0.5"
               title="Share report"
             >
               <Share2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Share</span>
+              <span className="hidden sm:inline">SHARE</span>
             </button>
 
             <button
               type="button"
               onClick={handleCopy}
-              className="p-2 rounded-lg border border-stone-200 bg-white text-stone-700 hover:bg-stone-50 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
-              title="Copy summary"
+              className="p-2 rounded-md border border-[#30363D] bg-[#161B22] text-[#C9D1D9] hover:bg-[#21262D] hover:text-white text-xs font-mono font-medium flex items-center gap-1.5 transition-colors cursor-pointer hover:-translate-y-0.5"
+              title="Copy terminal summary"
             >
-              {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
-              <span className="hidden sm:inline">{copied ? 'Copied' : 'Copy'}</span>
+              {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+              <span className="hidden sm:inline">{copied ? 'COPIED' : 'COPY'}</span>
             </button>
           </div>
         </div>
 
         {shareNotice && (
-          <div className="p-3 bg-blue-50 border border-blue-200 text-xs text-blue-900 rounded-lg flex items-center gap-2 animate-in fade-in">
-            <Sparkles className="w-4 h-4 text-blue-600 shrink-0" />
+          <div className="p-3 bg-emerald-950/40 border border-emerald-500/40 text-xs font-mono text-emerald-300 rounded-lg flex items-center gap-2 animate-in fade-in">
+            <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
             <span>{shareNotice}</span>
           </div>
         )}
 
-        {/* Claim Checked */}
+        {/* Claim Checked Box (Styled like Evidentiary Exhibit) */}
         <div>
-          <span className="font-mono text-xs uppercase font-bold tracking-wider text-stone-500 block mb-2">
-            CLAIM CHECKED
+          <span className="font-mono text-xs uppercase font-bold tracking-wider text-[#8B949E] block mb-2">
+            // EXHIBIT_A // PARSED_TARGET_ASSERTION
           </span>
-          <div className="p-4 rounded-xl bg-white border border-stone-200 text-stone-900 font-serif text-lg sm:text-xl font-medium leading-relaxed italic">
+          <div className="p-4 rounded-xl bg-[#0D1117] border border-[#30363D] text-[#F0F6FC] font-mono text-base sm:text-lg font-medium leading-relaxed">
+            <span className="text-emerald-400 mr-2 select-none">&gt;</span>
             "{result.claim}"
           </div>
         </div>
 
-        {/* Summary */}
+        {/* Session Trend Sparkline (renders if multiple related claims have been checked in the session) */}
+        <SessionTrendSparkline
+          currentResult={result}
+          sessionHistory={activeSessionHistory}
+          onSelectHistoricalClaim={onSelectHistoricalClaim}
+          onCheckRelatedClaim={onCheckRelatedClaim}
+        />
+
+        {/* Executive Summary Dossier */}
         <div>
-          <span className="font-mono text-xs uppercase font-bold tracking-wider text-stone-500 block mb-2">
-            SUMMARY
+          <span className="font-mono text-xs uppercase font-bold tracking-wider text-[#8B949E] block mb-2">
+            // EXECUTIVE_SYNTHESIS
           </span>
-          <p className="text-base sm:text-lg text-stone-800 leading-relaxed font-serif">
+          <p className="text-sm sm:text-base text-[#C9D1D9] leading-relaxed font-sans bg-[#0D1117] p-4 rounded-xl border border-[#30363D]">
             {result.summary}
           </p>
         </div>
 
-        {/* Detailed Analysis */}
+        {/* Detailed Forensic Analysis */}
         {result.analysis && (
           <div>
-            <span className="font-mono text-xs uppercase font-bold tracking-wider text-stone-500 block mb-2">
-              ANALYSIS
+            <span className="font-mono text-xs uppercase font-bold tracking-wider text-[#8B949E] block mb-2">
+              // DETAILED_FORENSIC_CROSS_EXAMINATION
             </span>
-            <div className="prose prose-stone max-w-none text-stone-700 text-sm sm:text-base leading-relaxed">
+            <div className="text-sm text-[#8B949E] leading-relaxed font-sans bg-[#0D1117] p-4 rounded-xl border border-[#30363D]">
               <p>{result.analysis}</p>
             </div>
           </div>
@@ -222,11 +250,11 @@ Verified with FactCheckAI Evidence Engine`;
         {/* Evidence Sources Section */}
         <div>
           <div className="mb-4">
-            <h4 className="font-serif text-xl font-bold text-stone-900 tracking-tight">
-              Evidence
+            <h4 className="font-mono text-base font-bold text-[#F0F6FC] tracking-tight uppercase">
+              // RETRIEVED_EVIDENCE_CORPUS
             </h4>
-            <p className="text-xs text-stone-500 font-mono mt-0.5">
-              Sources reviewed for this analysis
+            <p className="text-xs text-[#8B949E] font-mono mt-0.5">
+              Primary documents examined for empirical consensus
             </p>
           </div>
 
@@ -237,10 +265,10 @@ Verified with FactCheckAI Evidence Engine`;
               ))}
             </div>
           ) : (
-            <div className="p-8 text-center bg-stone-50 rounded-xl border border-stone-200 text-stone-600 text-sm">
-              <p className="font-medium">Insufficient reliable evidence was found to verify this claim.</p>
-              <p className="text-xs text-stone-500 mt-1">
-                The proposition was assigned a verdict of <strong>UNVERIFIED</strong>.
+            <div className="p-8 text-center bg-[#0D1117] rounded-xl border border-[#30363D] text-[#8B949E] text-xs font-mono">
+              <p className="font-medium">INSUFFICIENT RELIABLE EVIDENCE DISCOVERED IN PUBLIC RECORDS.</p>
+              <p className="text-[11px] text-[#484F58] mt-1">
+                STATUS CONVERGED TO [INCONCLUSIVE] TO AVOID HALLUCINATION.
               </p>
             </div>
           )}
@@ -250,47 +278,47 @@ Verified with FactCheckAI Evidence Engine`;
         <ReasoningSection reasoning={result.reasoning} verdict={result.verdict} />
 
         {/* Bottom Actions Bar */}
-        <div className="pt-6 border-t border-stone-200 flex flex-wrap items-center justify-between gap-4">
+        <div className="pt-6 border-t border-[#30363D] flex flex-wrap items-center justify-between gap-4 font-mono">
           <button
             type="button"
             onClick={onReset}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-stone-900 text-white text-xs sm:text-sm font-semibold hover:bg-stone-800 transition-colors shadow-xs cursor-pointer"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md bg-emerald-500 hover:bg-emerald-400 text-[#0D1117] font-mono text-xs sm:text-sm font-bold tracking-wide transition-all shadow-[0_0_15px_rgba(16,185,129,0.25)] hover:shadow-[0_0_20px_rgba(16,185,129,0.4)] cursor-pointer hover:-translate-y-0.5 active:scale-[0.98]"
           >
             <RotateCcw className="w-4 h-4" />
-            <span>Check Another Claim</span>
+            <span>AUDIT_ANOTHER_CLAIM</span>
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <button
               type="button"
               onClick={handleExportPdf}
               disabled={isExportingPdf}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-stone-900 text-white hover:bg-stone-800 text-xs font-semibold transition-all shadow-2xs active:scale-[0.98] cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md bg-[#21262D] hover:bg-[#30363D] border border-[#30363D] text-[#F0F6FC] hover:text-emerald-400 text-xs font-mono font-semibold transition-all shadow-xs cursor-pointer hover:-translate-y-0.5 disabled:opacity-50"
             >
               {isExportingPdf ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin text-stone-300" />
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-400" />
               ) : (
                 <FileDown className="w-3.5 h-3.5 text-emerald-400" />
               )}
-              <span>{isExportingPdf ? 'Exporting...' : 'Export PDF'}</span>
+              <span>{isExportingPdf ? 'EXPORTING...' : 'EXPORT_PDF'}</span>
             </button>
 
             <button
               type="button"
               onClick={handleCopy}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-stone-200 text-stone-700 hover:text-stone-900 hover:bg-stone-50 text-xs font-semibold transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md border border-[#30363D] bg-[#0D1117] text-[#C9D1D9] hover:text-white hover:border-[#8B949E] text-xs font-mono font-semibold transition-all cursor-pointer hover:-translate-y-0.5"
             >
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copied ? 'Copied' : 'Copy Report'}</span>
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copied ? 'COPIED' : 'COPY_RECORD'}</span>
             </button>
 
             <button
               type="button"
               onClick={handleShare}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-stone-200 text-stone-700 hover:text-stone-900 hover:bg-stone-50 text-xs font-semibold transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-md border border-[#30363D] bg-[#0D1117] text-[#C9D1D9] hover:text-white hover:border-[#8B949E] text-xs font-mono font-semibold transition-all cursor-pointer hover:-translate-y-0.5"
             >
               <Share2 className="w-3.5 h-3.5" />
-              <span>Share</span>
+              <span>SHARE</span>
             </button>
           </div>
         </div>
