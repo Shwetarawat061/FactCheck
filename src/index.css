@@ -91,3 +91,11 @@ html {
 .animate-indeterminate {
   animation: indeterminate 1.6s infinite ease-in-out;
 }
+
+/* Auditor Target interactive custom cursor for high-tech HUD */
+@media (pointer: fine) {
+  body.has-custom-cursor,
+  body.has-custom-cursor * {
+    cursor: none !important;
+  }
+}

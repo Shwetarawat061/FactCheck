@@ -93,6 +93,7 @@ export const ClaimInput: React.FC<ClaimInputProps> = ({
         <div className="flex items-center gap-2.5">
           <button
             type="button"
+            data-cursor="AUDIO_TOGGLE"
             onClick={handleToggleAudio}
             className={`inline-flex items-center gap-1.5 font-mono text-[10px] px-2 py-0.5 rounded border transition-all cursor-pointer ${
               !isMuted
@@ -127,6 +128,7 @@ export const ClaimInput: React.FC<ClaimInputProps> = ({
         <textarea
           ref={textareaRef}
           value={value}
+          data-cursor="QUERY"
           onChange={(e) => {
             const nextVal = e.target.value.slice(0, maxLength);
             // Catch typing from virtual / mobile keyboards that may bypass keydown
@@ -152,6 +154,7 @@ export const ClaimInput: React.FC<ClaimInputProps> = ({
 
           <button
             type="button"
+            data-cursor="VERIFY"
             onClick={() => {
               playKeypressSound('enter');
               onSubmit();

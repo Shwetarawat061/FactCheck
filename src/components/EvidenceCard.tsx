@@ -126,6 +126,7 @@ export const EvidenceCard: React.FC<EvidenceCardProps> = ({ evidence, index = 0 
             href={evidence.url}
             target="_blank"
             rel="noopener noreferrer"
+            data-cursor="READ"
             className="inline-flex items-center gap-1 text-xs font-mono font-semibold text-emerald-400 hover:text-emerald-300 group-hover:translate-x-0.5 transition-all"
           >
             <span>AUDIT_PRIMARY_SOURCE</span>

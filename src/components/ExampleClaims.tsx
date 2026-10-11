@@ -27,6 +27,7 @@ export const ExampleClaims: React.FC<ExampleClaimsProps> = ({ onSelectClaim, dis
           <button
             key={item.id}
             type="button"
+            data-cursor="FACT"
             disabled={disabled}
             onClick={() => {
               playTerminalSound('click');

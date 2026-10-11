@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
+import { AuditorCursor } from './components/AuditorCursor';
 import { ClaimInput } from './components/ClaimInput';
 import { ExampleClaims } from './components/ExampleClaims';
 import { AnalysisLoader } from './components/AnalysisLoader';
@@ -120,6 +121,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#0D1117] text-[#C9D1D9] cyber-grid">
+      <AuditorCursor />
       <Navbar onNewCheck={handleReset} onNavigateSection={handleNavigateSection} />
 
       <main className="flex-1">
@@ -276,6 +278,7 @@ export default function App() {
                 ].map((ex, i) => (
                   <div
                     key={i}
+                    data-cursor="FACT"
                     onClick={() => handleExampleSelect(ex.claim)}
                     className="p-5 rounded-xl bg-[#161B22] border border-[#30363D] shadow-xs hover:border-emerald-500/50 hover:shadow-[0_8px_25px_rgba(0,0,0,0.6)] transition-all duration-200 cursor-pointer text-left space-y-2 group hover:-translate-y-1"
                   >

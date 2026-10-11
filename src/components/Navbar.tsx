@@ -82,6 +82,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         <nav className="hidden md:flex items-center gap-7 text-xs font-mono uppercase tracking-wider text-[#8B949E]">
           <a 
             href="#verify" 
+            data-cursor="READ"
             onClick={(e) => {
               e.preventDefault();
               onNavigateSection?.('verify');
@@ -92,6 +93,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </a>
           <a 
             href="#how-it-works" 
+            data-cursor="READ"
             onClick={(e) => {
               e.preventDefault();
               onNavigateSection?.('how-it-works');
@@ -102,6 +104,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </a>
           <a 
             href="#examples" 
+            data-cursor="READ"
             onClick={(e) => {
               e.preventDefault();
               onNavigateSection?.('examples');
@@ -112,6 +115,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </a>
           <a 
             href="#about" 
+            data-cursor="READ"
             onClick={(e) => {
               e.preventDefault();
               onNavigateSection?.('about');
@@ -127,6 +131,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {onNewCheck && (
             <button
               type="button"
+              data-cursor="VERIFY"
               onClick={onNewCheck}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#21262D] hover:bg-[#30363D] border border-[#30363D] hover:border-emerald-500/50 text-[#F0F6FC] hover:text-emerald-300 font-mono text-xs font-semibold tracking-wide transition-all duration-200 active:scale-[0.98] cursor-pointer hover:-translate-y-0.5 shadow-sm"
             >
