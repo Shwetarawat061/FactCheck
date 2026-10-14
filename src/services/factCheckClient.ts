@@ -125,16 +125,24 @@ export async function checkClaim(
     data = JSON.parse(rawText);
   } catch {
     if (!res.ok) {
-      const snippet = rawText.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160);
+      const cleanSnippet = rawText.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 180);
+      let hint = '';
+      if (res.status === 500) {
+        hint = ' (Check Vercel or Flask backend logs; ensure GEMINI_API_KEY is configured in Environment Variables)';
+      } else if (res.status === 502 || res.status === 504) {
+        hint = ' (The verification request or search provider timed out)';
+      }
       throw new FactCheckError(
         'SERVER_ERROR',
-        snippet ? `Server error (${res.status}): ${snippet}` : `Server error (${res.status}). No result was produced.`
+        cleanSnippet
+          ? `Server error (${res.status}): ${cleanSnippet}${hint}`
+          : `Server error (${res.status}): The backend failed to complete verification.${hint}`
       );
     }
     if (rawText.trim().startsWith('<') || res.headers.get('content-type')?.includes('text/html')) {
       throw new FactCheckError(
         'BAD_RESPONSE',
-        'Server returned HTML page instead of JSON API response. Please retry.'
+        'Server returned HTML page instead of JSON API response. Please verify the API route configuration.'
       );
     }
     throw new FactCheckError(
@@ -144,9 +152,10 @@ export async function checkClaim(
   }
 
   if (!res.ok) {
+    const errorMsg = data?.message || data?.error || `Server error (${res.status}).`;
     throw new FactCheckError(
       data?.code ?? 'VERIFICATION_FAILED',
-      data?.message ?? `Server error (${res.status}). No result was produced.`
+      errorMsg
     );
   }
 

@@ -60,9 +60,13 @@ def _annotate_links(result: dict) -> None:
         e["urlReachable"] = ok  # shown in UI; never silently hidden
 
 
-@bp.route("/api/fact-check", methods=["POST"])
-@bp.route("/api/fact-check/", methods=["POST"])
+@bp.route("/api/fact-check", methods=["POST", "OPTIONS"])
+@bp.route("/api/fact-check/", methods=["POST", "OPTIONS"])
 def fact_check():
+    # Immediate preflight response
+    if request.method == "OPTIONS":
+        return "", 200
+
     body = request.get_json(silent=True)
     claim = body.get("claim") if isinstance(body, dict) else None
     if not isinstance(claim, str) or not claim.strip():
@@ -75,13 +79,25 @@ def fact_check():
         result = verify_claim(claim)
     except KeyError as e:
         log.error("missing env var: %s", e)
-        return _fail("SERVER_MISCONFIGURED", "Verification service is not configured.", 503)
-    except requests.RequestException:
+        return _fail(
+            "SERVER_MISCONFIGURED",
+            f"Server configuration error: missing required environment variable {str(e)}. Please set {str(e)} in environment.",
+            503
+        )
+    except requests.RequestException as e:
         log.exception("search provider failed")
-        return _fail("SEARCH_UNAVAILABLE", "Evidence search failed. No result was produced.", 502)
-    except Exception:
+        return _fail(
+            "SEARCH_UNAVAILABLE",
+            f"Evidence search provider failed ({str(e)}). Please verify internet/API access.",
+            502
+        )
+    except Exception as e:
         log.exception("verification failed")
-        return _fail("VERIFICATION_FAILED", "Verification failed. No result was produced.", 502)
+        return _fail(
+            "VERIFICATION_FAILED",
+            f"Verification error: {str(e)}",
+            502
+        )
 
     _annotate_links(result)
     if result.get("verdict") == "INCONCLUSIVE":
@@ -89,3 +105,4 @@ def fact_check():
     result["status"] = "inconclusive" if result.get("verdict") == "UNVERIFIED" else "ok"
     result["checkedAt"] = __import__("datetime").datetime.utcnow().isoformat() + "Z"
     return jsonify(result), 200
+

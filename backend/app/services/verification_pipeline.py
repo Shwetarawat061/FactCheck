@@ -162,6 +162,49 @@ def _judgment_evidence(judgments: list, sources: list[dict]) -> list[dict]:
     return evidence
 
 
+def _search_wikipedia(claim: str) -> list[dict]:
+    try:
+        cleaned = re.sub(r"[^\w\s]", " ", claim).strip()
+        terms = " ".join(cleaned.split()[:5])
+        res = requests.get(
+            f"https://en.wikipedia.org/w/api.php?action=opensearch&search={terms}&limit=4&namespace=0&format=json",
+            timeout=8,
+            headers={"User-Agent": "FactCheckAI/1.0"},
+        )
+        if not res.ok:
+            return []
+        data = res.json()
+        titles = data[1] if len(data) > 1 and isinstance(data[1], list) else []
+        urls = data[3] if len(data) > 3 and isinstance(data[3], list) else []
+        sources = []
+        for title, url in zip(titles[:3], urls[:3]):
+            try:
+                sum_res = requests.get(
+                    f"https://en.wikipedia.org/api/rest_v1/page/summary/{title}",
+                    timeout=5,
+                    headers={"User-Agent": "FactCheckAI/1.0"},
+                )
+                if sum_res.ok:
+                    sum_data = sum_res.json()
+                    extract = sum_data.get("extract", "")
+                    if extract and len(extract) > 30:
+                        sources.append(
+                            {
+                                "url": url,
+                                "title": f"{title} - Wikipedia",
+                                "domain": "wikipedia.org",
+                                "content": extract[:4000],
+                                "date": sum_data.get("timestamp", ""),
+                                "score": 0.95,
+                            }
+                        )
+            except Exception:
+                continue
+        return sources
+    except Exception:
+        return []
+
+
 def _analysis(claim: str, sources: list[dict], api_key: str) -> dict:
     from google import genai
 
@@ -193,18 +236,33 @@ Rules:
 
 Return JSON with this shape:
 {{"verdict":"INCONCLUSIVE","summary":"...","analysis":"...","reasoning":[{{"index":"01","title":"...","description":"..."}}],"sourceEvaluations":[{{"sourceIndex":1,"relationship":"CONTEXT","excerpt":"verbatim source text"}}]}}"""
-    response = client.models.generate_content(
-        model=os.environ.get("GEMINI_MODEL", "gemini-2.5-flash"),
-        contents=prompt,
-        config={"response_mime_type": "application/json"},
-    )
-    text = getattr(response, "text", None)
-    if not isinstance(text, str) or not text.strip():
-        raise ValueError("Gemini returned an empty analysis.")
-    parsed = json.loads(text)
-    if not isinstance(parsed, dict):
-        raise ValueError("Gemini returned an invalid analysis.")
-    return parsed
+
+    candidates = [
+        os.environ.get("GEMINI_MODEL"),
+        "gemini-3.1-flash-lite",
+        "gemini-3.8-flash",
+        "gemini-flash-latest",
+    ]
+    models = [m for m in candidates if m and m != "gemini-2.5-flash"]
+    last_err = None
+
+    for model_name in models:
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt,
+                config={"response_mime_type": "application/json"},
+            )
+            text = getattr(response, "text", None)
+            if isinstance(text, str) and text.strip():
+                parsed = json.loads(text)
+                if isinstance(parsed, dict):
+                    return parsed
+        except Exception as e:
+            last_err = e
+            continue
+
+    raise ValueError(f"All Gemini models failed: {last_err}")
 
 
 def _inconclusive(claim: str, evidence: list[dict], source_count: int) -> dict:
@@ -246,13 +304,29 @@ def _inconclusive(claim: str, evidence: list[dict], source_count: int) -> dict:
 def verify_claim(claim: str) -> dict:
     tavily_key = os.environ.get("TAVILY_API_KEY")
     gemini_key = os.environ.get("GEMINI_API_KEY")
-    if not tavily_key:
-        raise KeyError("TAVILY_API_KEY")
     if not gemini_key:
         raise KeyError("GEMINI_API_KEY")
 
     sanitized_claim = re.sub(r"[<>]", " ", claim).strip()
-    sources, source_count = _search_sources(sanitized_claim, tavily_key)
+    sources = []
+    source_count = 0
+
+    if tavily_key:
+        try:
+            t_sources, t_count = _search_sources(sanitized_claim, tavily_key)
+            sources.extend(t_sources)
+            source_count += t_count
+        except Exception:
+            pass
+
+    if len(sources) < 2:
+        wiki_sources = _search_wikipedia(sanitized_claim)
+        seen = {s["url"].casefold() for s in sources}
+        for ws in wiki_sources:
+            if ws["url"].casefold() not in seen:
+                sources.append(ws)
+                source_count += 1
+
     source_domains = {source["domain"] for source in sources}
     if len(sources) < 2 or len(source_domains) < 2:
         context_evidence = []
