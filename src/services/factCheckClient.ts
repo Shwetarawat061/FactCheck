@@ -125,7 +125,11 @@ export async function checkClaim(
     data = JSON.parse(rawText);
   } catch {
     if (!res.ok) {
-      throw new FactCheckError('SERVER_ERROR', `Server error (${res.status}). No result was produced.`);
+      const snippet = rawText.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160);
+      throw new FactCheckError(
+        'SERVER_ERROR',
+        snippet ? `Server error (${res.status}): ${snippet}` : `Server error (${res.status}). No result was produced.`
+      );
     }
     if (rawText.trim().startsWith('<') || res.headers.get('content-type')?.includes('text/html')) {
       throw new FactCheckError(
