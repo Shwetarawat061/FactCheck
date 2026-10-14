@@ -79,7 +79,12 @@ function parseResult(raw: any): FactCheckResultData {
   return d as FactCheckResultData;
 }
 
-export async function checkClaim(claim: string, signal?: AbortSignal): Promise<FactCheckResultData> {
+export async function checkClaim(
+  claim: string,
+  category?: string,
+  sourceUrl?: string,
+  signal?: AbortSignal
+): Promise<FactCheckResultData> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 90_000);
   signal?.addEventListener('abort', () => ctrl.abort());
@@ -92,7 +97,7 @@ export async function checkClaim(claim: string, signal?: AbortSignal): Promise<F
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
-      body: JSON.stringify({ claim }),
+      body: JSON.stringify({ claim, category, sourceUrl }),
       signal: ctrl.signal,
     });
   } catch (err: any) {

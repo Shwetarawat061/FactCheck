@@ -102,12 +102,12 @@ AUDIT PROTOCOL: Multi-domain grounded consensus verification`;
   return (
     <article className="w-full bg-[#161B22] rounded-xl border border-[#30363D] shadow-[0_12px_40px_rgba(0,0,0,0.6)] overflow-hidden animate-in fade-in duration-200 text-[#C9D1D9] terminal-scanlines relative">
       
-      {/* Dossier Terminal Header Banner */}
+      {/* Report Terminal Header Banner */}
       <div className="border-b border-[#30363D] px-6 py-4 bg-[#0D1117] flex flex-wrap items-center justify-between gap-3 font-mono">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-400">
             <Terminal className="w-4 h-4" />
-            <span>EVIDENTIARY_DOSSIER // {result.id || 'AUDIT_REF'}</span>
+            <span>VERIFICATION_REPORT // {result.id || 'REPORT_REF'}</span>
           </div>
 
           {result.status === 'inconclusive' || result.verdict === 'UNVERIFIED' ? (

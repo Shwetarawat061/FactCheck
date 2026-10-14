@@ -6,6 +6,8 @@ import { ClaimInput } from './components/ClaimInput';
 import { ExampleClaims } from './components/ExampleClaims';
 import { AnalysisLoader } from './components/AnalysisLoader';
 import { FactCheckResult } from './components/FactCheckResult';
+import { VerificationGuide } from './components/VerificationGuide';
+import { FeaturePillars } from './components/FeaturePillars';
 import { HowItWorks } from './components/HowItWorks';
 import { UseCases } from './components/UseCases';
 import { checkClaim, FactCheckError } from './services/factCheckClient';
@@ -28,10 +30,10 @@ export default function App() {
     }
   });
 
-  const handleCheckClaim = async (targetClaimText?: string) => {
+  const handleCheckClaim = async (targetClaimText?: string, optionalCategory?: string, optionalSourceUrl?: string) => {
     const claimToVerify = (targetClaimText !== undefined ? targetClaimText : claimInput).trim();
     if (!claimToVerify) {
-      setErrorMessage('Please enter or select a factual statement to audit.');
+      setErrorMessage('Please enter or select a statement or headline to verify.');
       playTerminalSound('error');
       return;
     }
@@ -48,7 +50,7 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
     try {
-      const data = await checkClaim(claimToVerify);
+      const data = await checkClaim(claimToVerify, optionalCategory, optionalSourceUrl);
       setResult(data);
       playTerminalSound('success');
       setSessionHistory((prev) => {
@@ -104,7 +106,7 @@ export default function App() {
     handleCheckClaim(claim);
   };
 
-  const handleNavigateSection = (section: 'verify' | 'how-it-works' | 'examples' | 'about') => {
+  const handleNavigateSection = (section: 'verify' | 'verification-scope' | 'how-it-works' | 'examples' | 'about') => {
     playTerminalSound('click');
     if (section === 'verify') {
       if (result) {
@@ -194,48 +196,44 @@ export default function App() {
           <>
             <section className="pt-20 pb-14 sm:pt-28 sm:pb-20 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto text-center terminal-scanlines relative rounded-2xl">
               
-              {/* Cyber Tagline Badge */}
+              {/* Product Badge */}
               <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-[#161B22] border border-[#30363D] text-[#C9D1D9] text-xs font-mono font-medium shadow-[0_0_15px_rgba(0,0,0,0.5)] mb-7 hover:border-emerald-500/40 transition-colors">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
-                <span className="text-emerald-400 font-bold">CYBER_AUDITOR //</span>
-                <span>FORENSIC DATA &amp; INTELLIGENCE ENGINE</span>
+                <span className="text-emerald-400 font-bold">[ AI-POWERED CLAIM VERIFICATION ]</span>
+                <span className="text-[#8B949E] hidden sm:inline">EVIDENCE INTELLIGENCE · SYSTEM ONLINE</span>
               </div>
 
               {/* Main Headline (Pixelated Retro Cyber Terminal Typography) */}
               <h1 className="font-pixel text-3xl sm:text-5xl lg:text-6xl font-bold tracking-wider text-[#F0F6FC] leading-[1.25] max-w-4xl mx-auto uppercase">
-                FORENSIC CLAIM AUDITOR. <br />
-                <span className="text-emerald-400 text-pixel-glow">VERIFY THE EVIDENCE.</span>
+                NOT EVERY CLAIM IS TRUE. <br />
+                <span className="text-emerald-400 text-pixel-glow">LET THE EVIDENCE SPEAK.</span>
               </h1>
 
               {/* Subtitle */}
-              <p className="mt-6 text-sm sm:text-base text-[#8B949E] leading-relaxed max-w-2xl mx-auto font-mono">
-                Cross-examines public assertions against live web documents, academic registries, and verified sources with strict polarity gates and verbatim citation tracing.
+              <p className="mt-6 text-sm sm:text-base text-[#8B949E] leading-relaxed max-w-2xl mx-auto font-sans sm:font-mono">
+                Verify claims against credible sources. Compare evidence across news wires, peer-reviewed science, and public registries. Discover what's true, false, or still uncertain.
               </p>
 
               {/* Interactive Centerpiece Claim Input Section */}
               <div id="verify-section" className="mt-12 text-left max-w-3xl mx-auto">
-                <div className="mb-3 flex items-center justify-between font-mono">
-                  <span className="text-xs uppercase font-bold text-[#F0F6FC] tracking-wider flex items-center gap-2">
-                    <Terminal className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>TARGET_STATEMENT_INPUT</span>
-                  </span>
-                  <span className="text-[11px] text-emerald-400/90">
-                    // INSTANT_FORENSIC_ANALYSIS
-                  </span>
-                </div>
-
                 <ClaimInput
                   value={claimInput}
                   onChange={setClaimInput}
-                  onSubmit={() => handleCheckClaim()}
+                  onSubmit={(category, sourceUrl) => handleCheckClaim(undefined, category, sourceUrl)}
                   isLoading={isLoading}
-                  placeholder="Paste a claim, article statement, or factual assertion..."
+                  placeholder="Paste a statement, headline, or claim to verify..."
                 />
 
                 <ExampleClaims onSelectClaim={handleExampleSelect} disabled={isLoading} />
+
+                {/* 4 Feature Pillars: Evidence retrieval, comparison, cited verdicts, transparent results */}
+                <FeaturePillars />
               </div>
 
             </section>
+
+            {/* ---------------- VERIFICATION SCOPE & DOMAIN ARCHITECTURE ---------------- */}
+            <VerificationGuide onSelectClaim={handleExampleSelect} />
 
             {/* ---------------- HOW IT WORKS (Connected Pipeline) ---------------- */}
             <HowItWorks />
@@ -243,36 +241,36 @@ export default function App() {
             {/* ---------------- USE CASES ---------------- */}
             <UseCases />
 
-            {/* ---------------- SUGGESTED DOSSIERS SECTION ---------------- */}
+            {/* ---------------- REPORTS & VERIFICATION CASES SECTION ---------------- */}
             <section id="examples" className="py-24 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="text-center max-w-2xl mx-auto mb-14 font-mono">
                 <span className="text-xs uppercase font-bold text-emerald-400 tracking-wider">
-                  // SAMPLE_INQUEST_DOSSIERS
+                  // VERIFICATION_REPORTS
                 </span>
                 <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#F0F6FC] mt-2 uppercase">
-                  Explore Pre-Seeded Target Assertions
+                  Explore Past Verification Cases
                 </h2>
                 <p className="text-xs sm:text-sm text-[#8B949E] mt-2">
-                  Select any dossier to execute live retrieval, multi-source consensus extraction, and evidentiary synthesis:
+                  Select any claim to execute live evidence retrieval, multi-source comparison, and cited verdict synthesis:
                 </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[
                   {
-                    topic: 'ASTROPHYSICS & ORBITAL',
-                    claim: 'The Great Wall of China is visible from the Moon.'
-                  },
-                  {
-                    topic: 'EPIDEMIOLOGY & ONCOLOGY',
+                    topic: 'HEALTH & NUTRITION',
                     claim: 'Coffee causes cancer.'
                   },
                   {
-                    topic: 'NEUROLOGY & COGNITIVE',
+                    topic: 'POPULAR SCIENCE & BIOLOGY',
                     claim: 'Humans only use 10% of their brains.'
                   },
                   {
-                    topic: 'THERMODYNAMICS & ATMOSPHERE',
+                    topic: 'ORBITAL OBSERVATIONS',
+                    claim: 'The Great Wall of China is visible from the Moon.'
+                  },
+                  {
+                    topic: 'PHYSICAL CONSTANTS',
                     claim: 'Water boils at 100°C at sea level.'
                   }
                 ].map((ex, i) => (
@@ -287,14 +285,14 @@ export default function App() {
                         // {ex.topic}
                       </span>
                       <span className="text-[10px] text-[#8B949E] group-hover:text-emerald-400">
-                        INQUEST #{i + 1}
+                        CASE #{i + 1}
                       </span>
                     </div>
                     <h4 className="font-mono text-sm sm:text-base font-bold text-[#F0F6FC] group-hover:text-white leading-snug">
                       "{ex.claim}"
                     </h4>
                     <div className="pt-2 text-[11px] font-mono font-semibold text-emerald-400 flex items-center gap-1.5 group-hover:translate-x-1 transition-transform">
-                      <span>EXECUTE_INQUEST</span>
+                      <span>VERIFY_CASE</span>
                       <ArrowRight className="w-3 h-3" />
                     </div>
                   </div>

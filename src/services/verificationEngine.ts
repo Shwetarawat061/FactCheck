@@ -39,12 +39,12 @@ export async function searchWithTavily(claim: string, apiKey: string): Promise<R
     body: JSON.stringify({
       api_key: apiKey,
       query: claim,
-      search_depth: 'advanced',
-      max_results: 8,
-      include_raw_content: true,
+      search_depth: 'basic',
+      max_results: 6,
+      include_raw_content: false,
       include_answer: false,
     }),
-    signal: AbortSignal.timeout(20_000),
+    signal: AbortSignal.timeout(8_000),
   });
 
   if (!response.ok) {
@@ -223,22 +223,34 @@ export async function generateWithGemini(ai: GoogleGenAI, prompt: string): Promi
   throw lastError || new Error('All Gemini model candidates failed to respond.');
 }
 
-export async function verifyClaimEngine(claimText: string): Promise<FactCheckResult> {
+export async function verifyClaimEngine(
+  claimText: string,
+  category?: string,
+  sourceUrl?: string
+): Promise<FactCheckResult> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error('GEMINI_API_KEY is not configured on the server.');
   }
 
   const claim = claimText.trim();
-  const ai = new GoogleGenAI();
+  const ai = new GoogleGenAI({
+    apiKey,
+    httpOptions: {
+      headers: {
+        'User-Agent': 'aistudio-build',
+      },
+    },
+  });
   let sources: RetrievedSource[] = [];
 
   // Concurrently execute multi-source retrieval (Tavily, DuckDuckGo, Wikipedia)
+  const searchQuery = category && category !== 'all' ? `${claim} ${category}` : claim;
   const searchTasks: Promise<RetrievedSource[]>[] = [];
   if (process.env.TAVILY_API_KEY) {
-    searchTasks.push(searchWithTavily(claim, process.env.TAVILY_API_KEY).catch(() => []));
+    searchTasks.push(searchWithTavily(searchQuery, process.env.TAVILY_API_KEY).catch(() => []));
   }
-  searchTasks.push(searchWithDuckDuckGo(claim).catch(() => []));
+  searchTasks.push(searchWithDuckDuckGo(searchQuery).catch(() => []));
   searchTasks.push(searchWithWikipedia(claim).catch(() => []));
 
   const settleResults = await Promise.allSettled(searchTasks);
@@ -317,7 +329,13 @@ ${sourceDescriptions}
 CRITICAL RULES:
 1. Do not invent facts, URLs, or quotes. Use ONLY the verified sources provided above.
 2. For each source [1..${Math.min(sources.length, 6)}], determine whether its text SUPPORTS, CONTRADICTS, or provides CONTEXT for the claim. Extract a verbatim quote/excerpt (25-300 characters) from that source's text.
-3. Choose an objective verdict: "TRUE", "MOSTLY TRUE", "MIXED", "MOSTLY FALSE", "FALSE", or "UNVERIFIED".
+3. Choose an objective verdict strictly among these categories:
+   - "TRUE": reliable evidence directly supports the claim.
+   - "FALSE": reliable evidence directly contradicts the claim.
+   - "PARTIALLY TRUE": some parts are accurate, while others are inaccurate or exaggerated.
+   - "MISLEADING": the claim omits context or presents information deceptively.
+   - "UNVERIFIED": insufficient reliable evidence is available.
+   * STRICT SAFEGUARD: Do NOT automatically label a claim FALSE simply because you cannot find evidence for it. If evidence is scarce, choose "UNVERIFIED".
 4. Determine confidence as an integer between 70 and 96 based on evidence consensus.
 5. Provide a 2-3 sentence executive summary.
 6. Provide an analytical audit paragraph.

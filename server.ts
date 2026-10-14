@@ -62,6 +62,9 @@ app.post('/api/fact-check', async (req: Request, res: Response) => {
   }
 
   const rawClaim = req.body?.claim;
+  const rawCategory = req.body?.category;
+  const rawSourceUrl = req.body?.sourceUrl;
+
   if (typeof rawClaim !== 'string' || !rawClaim.trim()) {
     res.status(400).json({
       status: 'failed',
@@ -82,7 +85,11 @@ app.post('/api/fact-check', async (req: Request, res: Response) => {
   }
 
   try {
-    const result = await verifyClaimEngine(claim);
+    const result = await verifyClaimEngine(
+      claim,
+      typeof rawCategory === 'string' ? rawCategory : undefined,
+      typeof rawSourceUrl === 'string' ? rawSourceUrl : undefined
+    );
     res.json(result);
   } catch (error: any) {
     console.error('Fact-check evaluation error:', error);

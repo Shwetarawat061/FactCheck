@@ -59,8 +59,11 @@ export default async function handler(req: any, res: any) {
     });
   }
 
+  const category = typeof body?.category === 'string' ? body.category : undefined;
+  const sourceUrl = typeof body?.sourceUrl === 'string' ? body.sourceUrl : undefined;
+
   try {
-    const result = await verifyClaimEngine(claim);
+    const result = await verifyClaimEngine(claim, category, sourceUrl);
     return res.status(200).json(result);
   } catch (error: any) {
     console.error('Fact-check serverless error:', error);

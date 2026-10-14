@@ -1,6 +1,8 @@
 export type Verdict =
   | 'TRUE'
   | 'MOSTLY TRUE'
+  | 'PARTIALLY TRUE'
+  | 'MISLEADING'
   | 'MIXED'
   | 'MOSTLY FALSE'
   | 'FALSE'

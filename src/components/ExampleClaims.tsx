@@ -14,10 +14,10 @@ export const ExampleClaims: React.FC<ExampleClaimsProps> = ({ onSelectClaim, dis
       <div className="flex items-center justify-between mb-3">
         <span className="font-mono text-xs text-[#8B949E] uppercase tracking-wider flex items-center gap-1.5">
           <Terminal className="w-3.5 h-3.5 text-emerald-400" />
-          <span>SUGGESTED_INQUEST_QUERIES:</span>
+          <span>EXPLORE SAMPLE CLAIMS:</span>
         </span>
         <span className="font-mono text-[11px] text-[#484F58]">
-          CLICK CHIP TO POPULATE & AUDIT
+          CLICK TO AUTO-POPULATE &amp; VERIFY
         </span>
       </div>
 

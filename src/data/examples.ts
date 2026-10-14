@@ -1,33 +1,45 @@
 export interface ExampleClaimItem {
   id: string;
   claim: string;
-  category: 'Science' | 'Health' | 'Astronomy' | 'Geography' | 'Physics';
+  category: 'News' | 'Health' | 'Finance' | 'Social' | 'Forensics' | 'Science';
+  categoryLabel: string;
 }
 
 export const EXAMPLE_CLAIMS: ExampleClaimItem[] = [
   {
-    id: 'flat-earth',
-    claim: 'The Earth is flat.',
-    category: 'Science'
+    id: 'news-1',
+    claim: 'The United Nations passed a binding treaty banning civilian drones worldwide in 2026.',
+    category: 'News',
+    categoryLabel: 'News & Current Affairs'
   },
   {
-    id: 'brain-10',
-    claim: 'Humans only use 10% of their brains.',
-    category: 'Science'
-  },
-  {
-    id: 'great-wall-moon',
-    claim: 'The Great Wall of China is visible from the Moon.',
-    category: 'Astronomy'
-  },
-  {
-    id: 'coffee-cancer',
+    id: 'health-coffee',
     claim: 'Coffee causes cancer.',
-    category: 'Health'
+    category: 'Health',
+    categoryLabel: 'Health & Science'
   },
   {
-    id: 'water-boiling',
-    claim: 'Water boils at 100°C at sea level.',
-    category: 'Physics'
+    id: 'finance-tesla',
+    claim: 'Tesla announced an immediate 40% price cut across all Model Y electric vehicles.',
+    category: 'Finance',
+    categoryLabel: 'Finance & Business'
+  },
+  {
+    id: 'social-call-ban',
+    claim: 'A secret federal regulation prohibits phone calls between 10 PM and 6 AM.',
+    category: 'Social',
+    categoryLabel: 'Social Media & Viral'
+  },
+  {
+    id: 'forensics-moon',
+    claim: 'The Great Wall of China is visible from the Moon with the naked eye.',
+    category: 'Forensics',
+    categoryLabel: 'Forensic & Evidence'
+  },
+  {
+    id: 'science-brain',
+    claim: 'Humans only use 10% of their brains.',
+    category: 'Science',
+    categoryLabel: 'Health & Science'
   }
 ];

@@ -3,7 +3,7 @@ import { Terminal, Plus, ShieldCheck, Activity } from 'lucide-react';
 
 interface NavbarProps {
   onNewCheck?: () => void;
-  onNavigateSection?: (section: 'verify' | 'how-it-works' | 'examples' | 'about') => void;
+  onNavigateSection?: (section: 'verify' | 'verification-scope' | 'how-it-works' | 'examples' | 'about') => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -48,8 +48,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="font-mono font-bold text-[#F0F6FC] text-base tracking-tight flex items-center gap-1.5">
               FACTCHECK<span className="text-emerald-400">.AI</span>
             </span>
-            <span className="hidden md:inline-block font-mono text-[10px] text-[#8B949E] px-1.5 py-0.5 rounded border border-[#30363D] bg-[#161B22]">
-              FORENSIC_ENGINE
+            <span className="hidden md:inline-block font-mono text-[10px] text-emerald-400/90 px-1.5 py-0.5 rounded border border-emerald-900/50 bg-emerald-950/40">
+              AI_VERIFICATION_ENGINE
             </span>
 
             {/* Pulse ping dot live status */}
@@ -58,7 +58,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span className="relative flex h-2 w-2">
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
                 </span>
-                <span>OFFLINE</span>
+                <span>SYSTEM_OFFLINE</span>
               </span>
             ) : isOnline ? (
               <span className="inline-flex items-center gap-2 px-2 py-0.5 rounded border border-emerald-900/50 bg-emerald-950/30 text-emerald-300 text-[10px] font-mono uppercase tracking-wider">
@@ -66,7 +66,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                 </span>
-                <span className="hidden sm:inline">LIVE_AUDIT</span>
+                <span className="hidden sm:inline">LIVE_VERIFICATION</span>
                 <span className="sm:hidden">LIVE</span>
               </span>
             ) : (
@@ -79,7 +79,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Monospace Navigation Links */}
-        <nav className="hidden md:flex items-center gap-7 text-xs font-mono uppercase tracking-wider text-[#8B949E]">
+        <nav className="hidden md:flex items-center gap-6 text-xs font-mono uppercase tracking-wider text-[#8B949E]">
           <a 
             href="#verify" 
             data-cursor="READ"
@@ -111,7 +111,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             }}
             className="hover:text-emerald-400 hover:underline underline-offset-4 transition-colors"
           >
-            // DOSSIERS
+            // REPORTS
           </a>
           <a 
             href="#about" 
@@ -126,14 +126,14 @@ export const Navbar: React.FC<NavbarProps> = ({
           </a>
         </nav>
 
-        {/* Action Button: + New Inquest */}
+        {/* Action Button: + New Claim */}
         <div className="flex items-center gap-3">
           {onNewCheck && (
             <button
               type="button"
               data-cursor="VERIFY"
               onClick={onNewCheck}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-[#21262D] hover:bg-[#30363D] border border-[#30363D] hover:border-emerald-500/50 text-[#F0F6FC] hover:text-emerald-300 font-mono text-xs font-semibold tracking-wide transition-all duration-200 active:scale-[0.98] cursor-pointer hover:-translate-y-0.5 shadow-sm"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md bg-[#21262D] hover:bg-[#30363D] border border-[#30363D] hover:border-emerald-500/50 text-[#F0F6FC] hover:text-emerald-300 font-mono text-xs font-semibold tracking-wide transition-all duration-200 active:scale-[0.98] cursor-pointer hover:-translate-y-0.5 shadow-sm"
             >
               <Plus className="w-3.5 h-3.5 text-emerald-400" />
               <span>NEW_CLAIM</span>

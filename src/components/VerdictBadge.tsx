@@ -35,6 +35,22 @@ export const VERDICT_CONFIG: Record<
     icon: ShieldCheck,
     description: 'Core assertion is supported by empirical records, though minor context nuances exist.'
   },
+  'PARTIALLY TRUE': {
+    label: 'PARTIALLY_TRUE',
+    bg: 'bg-amber-950/50',
+    text: 'text-amber-300',
+    border: 'border-amber-500/60',
+    icon: AlertTriangle,
+    description: 'Some parts are accurate, while key details or quantitative figures deviate from reliable evidence.'
+  },
+  'MISLEADING': {
+    label: 'MISLEADING',
+    bg: 'bg-orange-950/50',
+    text: 'text-orange-400',
+    border: 'border-orange-500/60',
+    icon: AlertTriangle,
+    description: 'Omits vital context or frames accurate elements deceptively to imply an unfounded conclusion.'
+  },
   'MIXED': {
     label: 'MIXED_SIGNALS',
     bg: 'bg-amber-950/50',
