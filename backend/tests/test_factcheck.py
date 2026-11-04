@@ -46,13 +46,14 @@ def test_unknown_claim_reports_missing_config_without_mock(client, monkeypatch):
     assert response.status_code == 503
     assert response.get_json()['code'] == 'SERVER_MISCONFIGURED'
 
-def test_missing_tavily_key_is_not_a_result(client, monkeypatch):
+def test_missing_tavily_key_uses_available_search_fallback(client, monkeypatch):
     monkeypatch.setenv('GEMINI_API_KEY', 'test-gemini-key')
     monkeypatch.delenv('TAVILY_API_KEY', raising=False)
+    monkeypatch.setattr('app.services.verification_pipeline._search_wikipedia', lambda claim: [])
     response = client.post('/api/fact-check', json={'claim': 'Water boils at 100C at sea level'})
-    assert response.status_code == 503
-    assert response.get_json()['status'] == 'failed'
-    assert 'verdict' not in response.get_json()
+    assert response.status_code == 200
+    assert response.get_json()['status'] == 'inconclusive'
+    assert response.get_json()['verdict'] == 'UNVERIFIED'
 
 def test_failure_is_not_a_result(client, monkeypatch):
     def boom(claim):

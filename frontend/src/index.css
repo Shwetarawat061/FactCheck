@@ -1,27 +1,88 @@
 @import "tailwindcss";
 
 @theme {
-  --font-serif: 'Newsreader', Georgia, Cambria, 'Times New Roman', Times, serif;
-  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-pixel: 'Pixelify Sans', 'Silkscreen', 'Press Start 2P', monospace;
+  --font-serif: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-sans: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.font-pixel {
+  font-family: 'Pixelify Sans', 'Silkscreen', 'Press Start 2P', monospace;
+  letter-spacing: 0.04em;
+}
+
+.text-pixel-glow {
+  text-shadow: 0 0 15px rgba(16, 185, 129, 0.45), 0 0 30px rgba(16, 185, 129, 0.25);
 }
 
 html {
   scroll-behavior: smooth;
+  background-color: #0D1117;
+  color: #C9D1D9;
 }
 
-/* Custom subtle scrollbar */
+.cyber-grid {
+  background-color: #0D1117;
+  background-image: radial-gradient(circle at 1px 1px, rgba(48, 54, 61, 0.45) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+.cyber-panel {
+  background-color: #161B22;
+  border-color: #30363D;
+}
+
+.terminal-scanlines {
+  position: relative;
+}
+
+.terminal-scanlines::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.015) 0px,
+    rgba(255, 255, 255, 0.015) 1px,
+    transparent 1px,
+    transparent 3px,
+    rgba(0, 0, 0, 0.24) 3px,
+    rgba(0, 0, 0, 0.24) 4px
+  );
+  opacity: 0.7;
+  border-radius: inherit;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: #0D1117;
 }
 ::-webkit-scrollbar-thumb {
-  background: #d6d3d1;
-  border-radius: 9999px;
+  background: #30363D;
+  border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #a8a29e;
+  background: #8B949E;
+}
+
+@keyframes indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(250%);
+  }
+}
+
+.animate-indeterminate {
+  animation: indeterminate 1.6s infinite ease-in-out;
 }

@@ -31,7 +31,7 @@ export const Landing: React.FC<LandingProps> = ({
     examplesSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  const scrollToSection = (section: 'verify' | 'how-it-works' | 'examples' | 'about') => {
+  const scrollToSection = (section: 'verify' | 'verification-scope' | 'how-it-works' | 'examples' | 'about') => {
     if (section === 'verify') {
       scrollToClaimInput();
     } else {

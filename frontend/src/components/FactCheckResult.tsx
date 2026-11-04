@@ -5,20 +5,39 @@ import { VerdictBadge, VERDICT_CONFIG } from './VerdictBadge';
 import { EvidenceOverview } from './EvidenceOverview';
 import { EvidenceCard } from './EvidenceCard';
 import { ReasoningSection } from './ReasoningSection';
+import { SessionTrendSparkline } from './SessionTrendSparkline';
 import { exportFactCheckToPdf } from '../services/pdfExport';
 
 interface FactCheckResultProps {
   result: ResultType;
+  sessionHistory?: ResultType[];
+  onSelectHistoricalClaim?: (result: ResultType) => void;
+  onCheckRelatedClaim?: (claim: string) => void;
   onReset: () => void;
 }
 
 export const FactCheckResult: React.FC<FactCheckResultProps> = ({
   result,
+  sessionHistory,
+  onSelectHistoricalClaim,
+  onCheckRelatedClaim,
   onReset
 }) => {
   const [copied, setCopied] = useState(false);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [shareNotice, setShareNotice] = useState<string | null>(null);
+
+  // Fallback to sessionStorage if sessionHistory is not passed directly
+  const [fallbackHistory] = useState<ResultType[]>(() => {
+    try {
+      const stored = sessionStorage.getItem('factcheck_session_history');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const activeSessionHistory = sessionHistory || fallbackHistory;
   const confidenceLabel = result.status === 'ok' && result.confidence > 0
     ? ` (${result.confidence}% heuristic confidence)`
     : '';
@@ -193,6 +212,14 @@ Verified with FactCheckAI Evidence Engine`;
             "{result.claim}"
           </div>
         </div>
+
+        {/* Session Trend Sparkline (renders if multiple related claims have been checked in the session) */}
+        <SessionTrendSparkline
+          currentResult={result}
+          sessionHistory={activeSessionHistory}
+          onSelectHistoricalClaim={onSelectHistoricalClaim}
+          onCheckRelatedClaim={onCheckRelatedClaim}
+        />
 
         {/* Summary */}
         <div>

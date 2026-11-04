@@ -79,7 +79,12 @@ function parseResult(raw: any): FactCheckResultData {
   return d as FactCheckResultData;
 }
 
-export async function checkClaim(claim: string, signal?: AbortSignal): Promise<FactCheckResultData> {
+export async function checkClaim(
+  claim: string,
+  category?: string,
+  sourceUrl?: string,
+  signal?: AbortSignal
+): Promise<FactCheckResultData> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 90_000);
   signal?.addEventListener('abort', () => ctrl.abort());
@@ -92,7 +97,7 @@ export async function checkClaim(claim: string, signal?: AbortSignal): Promise<F
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
-      body: JSON.stringify({ claim }),
+      body: JSON.stringify({ claim, category, sourceUrl }),
       signal: ctrl.signal,
     });
   } catch (err: any) {
@@ -100,7 +105,9 @@ export async function checkClaim(claim: string, signal?: AbortSignal): Promise<F
       err?.name === 'AbortError' ? 'TIMEOUT' : 'BACKEND_UNREACHABLE',
       err?.name === 'AbortError'
         ? 'Verification timed out. No result was produced.'
-        : 'Could not reach the verification server. No result was produced.'
+        : BASE
+        ? `Could not reach verification server at ${BASE}. Please verify server status.`
+        : 'Could not reach the verification server. If deployed on GitHub Pages, configure VITE_API_BASE_URL pointing to your Vercel backend.'
     );
   } finally {
     clearTimeout(timer);
@@ -118,12 +125,24 @@ export async function checkClaim(claim: string, signal?: AbortSignal): Promise<F
     data = JSON.parse(rawText);
   } catch {
     if (!res.ok) {
-      throw new FactCheckError('SERVER_ERROR', `Server error (${res.status}). No result was produced.`);
+      const cleanSnippet = rawText.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 180);
+      let hint = '';
+      if (res.status === 500) {
+        hint = ' (Check Vercel or Flask backend logs; ensure GEMINI_API_KEY is configured in Environment Variables)';
+      } else if (res.status === 502 || res.status === 504) {
+        hint = ' (The verification request or search provider timed out)';
+      }
+      throw new FactCheckError(
+        'SERVER_ERROR',
+        cleanSnippet
+          ? `Server error (${res.status}): ${cleanSnippet}${hint}`
+          : `Server error (${res.status}): The backend failed to complete verification.${hint}`
+      );
     }
     if (rawText.trim().startsWith('<') || res.headers.get('content-type')?.includes('text/html')) {
       throw new FactCheckError(
         'BAD_RESPONSE',
-        'Server returned HTML page instead of JSON API response. Please retry.'
+        'Server returned HTML page instead of JSON API response. Please verify the API route configuration.'
       );
     }
     throw new FactCheckError(
@@ -133,9 +152,10 @@ export async function checkClaim(claim: string, signal?: AbortSignal): Promise<F
   }
 
   if (!res.ok) {
+    const errorMsg = data?.message || data?.error || `Server error (${res.status}).`;
     throw new FactCheckError(
       data?.code ?? 'VERIFICATION_FAILED',
-      data?.message ?? `Server error (${res.status}). No result was produced.`
+      errorMsg
     );
   }
 
