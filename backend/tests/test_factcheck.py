@@ -4,6 +4,7 @@ import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from app import create_app
+from app.services.verification_pipeline import GeminiUnavailableError
 
 @pytest.fixture
 def client():
@@ -62,3 +63,13 @@ def test_failure_is_not_a_result(client, monkeypatch):
     assert response.status_code == 502
     assert response.get_json()['status'] == 'failed'
     assert 'verdict' not in response.get_json()
+
+def test_gemini_unavailable_is_reported_as_retryable(client, monkeypatch):
+    def unavailable(claim):
+        raise GeminiUnavailableError('Gemini models are temporarily unavailable.')
+
+    monkeypatch.setattr('app.routes.factcheck_routes.verify_claim', unavailable)
+    response = client.post('/api/fact-check', json={'claim': 'x'})
+    assert response.status_code == 503
+    assert response.get_json()['code'] == 'GEMINI_UNAVAILABLE'
+    assert 'try again shortly' in response.get_json()['message']
