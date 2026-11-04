@@ -11,7 +11,7 @@ from urllib.parse import urlparse
 import requests
 from flask import Blueprint, jsonify, request
 
-from app.services.verification_pipeline import verify_claim
+from app.services.verification_pipeline import GeminiUnavailableError, verify_claim
 
 bp = Blueprint("factcheck", __name__)
 log = logging.getLogger("factcheck")
@@ -91,6 +91,13 @@ def fact_check():
             f"Evidence search provider failed ({str(e)}). Please verify internet/API access.",
             502
         )
+    except GeminiUnavailableError:
+        log.exception("Gemini models are temporarily unavailable")
+        return _fail(
+            "GEMINI_UNAVAILABLE",
+            "AI verification is temporarily unavailable. Please try again shortly.",
+            503,
+        )
     except Exception as e:
         log.exception("verification failed")
         return _fail(
@@ -105,4 +112,3 @@ def fact_check():
     result["status"] = "inconclusive" if result.get("verdict") == "UNVERIFIED" else "ok"
     result["checkedAt"] = __import__("datetime").datetime.utcnow().isoformat() + "Z"
     return jsonify(result), 200
-

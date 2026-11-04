@@ -1,3 +1,9 @@
+import json
+import sys
+from types import SimpleNamespace
+
+import pytest
+
 from app.services import verification_pipeline
 
 
@@ -141,3 +147,69 @@ def test_search_results_from_one_domain_are_inconclusive(monkeypatch):
     assert result["verdict"] == "INCONCLUSIVE"
     assert result["confidence"] == 0
     assert result["evidenceOverview"]["context"] == 2
+
+
+def test_gemini_retries_temporary_failure_then_uses_fallback(monkeypatch):
+    calls = []
+    delays = []
+
+    def generate_content(**kwargs):
+        calls.append(kwargs["model"])
+        if kwargs["model"] == "custom-primary":
+            raise RuntimeError("503 UNAVAILABLE: high demand")
+        return SimpleNamespace(text=json.dumps({"verdict": "INCONCLUSIVE"}))
+
+    fake_genai = SimpleNamespace(
+        Client=lambda **kwargs: SimpleNamespace(
+            models=SimpleNamespace(generate_content=generate_content)
+        )
+    )
+    monkeypatch.setitem(sys.modules, "google", SimpleNamespace(genai=fake_genai))
+    monkeypatch.setenv("GEMINI_MODEL", "custom-primary")
+    monkeypatch.setattr(verification_pipeline.time, "sleep", delays.append)
+
+    result = verification_pipeline._analysis("claim", [], "test-key")
+
+    assert result == {"verdict": "INCONCLUSIVE"}
+    assert calls == ["custom-primary", "custom-primary", "gemini-3.8-flash"]
+    assert delays == [1]
+
+
+def test_gemini_moves_to_fallback_after_non_temporary_failure(monkeypatch):
+    calls = []
+
+    def generate_content(**kwargs):
+        calls.append(kwargs["model"])
+        if kwargs["model"] == "invalid-primary":
+            raise RuntimeError("404 model not found")
+        return SimpleNamespace(text=json.dumps({"verdict": "INCONCLUSIVE"}))
+
+    fake_genai = SimpleNamespace(
+        Client=lambda **kwargs: SimpleNamespace(
+            models=SimpleNamespace(generate_content=generate_content)
+        )
+    )
+    monkeypatch.setitem(sys.modules, "google", SimpleNamespace(genai=fake_genai))
+    monkeypatch.setenv("GEMINI_MODEL", "invalid-primary")
+
+    result = verification_pipeline._analysis("claim", [], "test-key")
+
+    assert result == {"verdict": "INCONCLUSIVE"}
+    assert calls == ["invalid-primary", "gemini-3.8-flash"]
+
+
+def test_all_temporary_gemini_failures_raise_unavailable(monkeypatch):
+    def generate_content(**kwargs):
+        raise RuntimeError("503 UNAVAILABLE: high demand")
+
+    fake_genai = SimpleNamespace(
+        Client=lambda **kwargs: SimpleNamespace(
+            models=SimpleNamespace(generate_content=generate_content)
+        )
+    )
+    monkeypatch.setitem(sys.modules, "google", SimpleNamespace(genai=fake_genai))
+    monkeypatch.setenv("GEMINI_MODEL", "custom-primary")
+    monkeypatch.setattr(verification_pipeline.time, "sleep", lambda _: None)
+
+    with pytest.raises(verification_pipeline.GeminiUnavailableError):
+        verification_pipeline._analysis("claim", [], "test-key")

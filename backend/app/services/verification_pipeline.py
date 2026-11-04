@@ -2,9 +2,11 @@
 
 import json
 import ipaddress
+import logging
 import math
 import os
 import re
+import time
 from urllib.parse import urlparse
 from uuid import uuid4
 
@@ -13,6 +15,7 @@ import requests
 from app.services.verification_gates import gate
 
 _TAVILY_URL = "https://api.tavily.com/search"
+_log = logging.getLogger("factcheck")
 _RELATIONSHIPS = {"SUPPORTS", "CONTRADICTS", "CONTEXT"}
 _VERDICTS = {"TRUE", "MOSTLY TRUE", "MIXED", "MOSTLY FALSE", "FALSE", "INCONCLUSIVE"}
 _MULTIPART_SUFFIXES = {
@@ -29,6 +32,10 @@ _MULTIPART_SUFFIXES = {
     "com.tr",
     "org.uk",
 }
+
+
+class GeminiUnavailableError(RuntimeError):
+    """Raised when all Gemini model candidates fail with temporary errors."""
 
 
 def _domain_for_url(url: str) -> str:
@@ -236,33 +243,85 @@ Rules:
 
 Return JSON with this shape:
 {{"verdict":"INCONCLUSIVE","summary":"...","analysis":"...","reasoning":[{{"index":"01","title":"...","description":"..."}}],"sourceEvaluations":[{{"sourceIndex":1,"relationship":"CONTEXT","excerpt":"verbatim source text"}}]}}"""
-
-    candidates = [
-        os.environ.get("GEMINI_MODEL"),
-        "gemini-3.1-flash-lite",
-        "gemini-3.8-flash",
-        "gemini-flash-latest",
-    ]
-    models = [m for m in candidates if m and m != "gemini-2.5-flash"]
-    last_err = None
-
-    for model_name in models:
-        try:
-            response = client.models.generate_content(
-                model=model_name,
-                contents=prompt,
-                config={"response_mime_type": "application/json"},
+    configured_model = os.environ.get("GEMINI_MODEL")
+    models = list(
+        dict.fromkeys(
+            model
+            for model in (
+                configured_model,
+                "gemini-3.8-flash",
+                "gemini-3.6-flash",
+                "gemini-3.5-flash-lite",
             )
-            text = getattr(response, "text", None)
-            if isinstance(text, str) and text.strip():
-                parsed = json.loads(text)
-                if isinstance(parsed, dict):
-                    return parsed
-        except Exception as e:
-            last_err = e
-            continue
+            if model
+        )
+    )
+    last_error = None
 
-    raise ValueError(f"All Gemini models failed: {last_err}")
+    for model in models:
+        for attempt in range(2):
+            try:
+                _log.info("[Gemini] Trying %s, attempt %d", model, attempt + 1)
+
+                response = client.models.generate_content(
+                    model=model,
+                    contents=prompt,
+                    config={"response_mime_type": "application/json"},
+                )
+                text = getattr(response, "text", None)
+                if not isinstance(text, str) or not text.strip():
+                    raise ValueError(f"Gemini returned an empty analysis from {model}.")
+                parsed = json.loads(text)
+                if not isinstance(parsed, dict):
+                    raise ValueError(f"Gemini returned an invalid analysis from {model}.")
+                _log.info("[Gemini] Success with %s", model)
+                return parsed
+            except Exception as error:
+                last_error = error
+                message = str(error)
+                _log.warning(
+                    "[Gemini] %s failed on attempt %d: %s",
+                    model,
+                    attempt + 1,
+                    message[:250],
+                )
+                if _is_temporary_gemini_error(error) and attempt == 0:
+                    time.sleep(1)
+                    continue
+                break
+
+    if last_error is not None:
+        if _is_temporary_gemini_error(last_error):
+            raise GeminiUnavailableError(
+                "Gemini models are temporarily unavailable."
+            ) from last_error
+        raise last_error
+    raise RuntimeError("No Gemini model candidates are configured.")
+
+
+def _is_temporary_gemini_error(error: Exception) -> bool:
+    statuses = (
+        getattr(error, "code", None),
+        getattr(error, "status", None),
+        getattr(error, "status_code", None),
+        getattr(getattr(error, "response", None), "status_code", None),
+    )
+    for status in statuses:
+        try:
+            if int(status) in {408, 429, 500, 502, 503, 504}:
+                return True
+        except (TypeError, ValueError):
+            pass
+
+    message = str(error)
+    return bool(
+        re.search(r"\b(?:408|429|500|502|503|504)\b", message)
+        or re.search(
+            r"UNAVAILABLE|RESOURCE_EXHAUSTED|high demand|overloaded",
+            message,
+            re.IGNORECASE,
+        )
+    )
 
 
 def _inconclusive(claim: str, evidence: list[dict], source_count: int) -> dict:

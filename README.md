@@ -139,7 +139,7 @@ npm run test:api
 | Variable | Scope | Description |
 |---|---|---|
 | `GEMINI_API_KEY` | Server / Vercel API | Google Gemini API key for grounded evidence synthesis |
+| `GEMINI_MODEL` | Server / Vercel API | Primary Gemini model (default: `gemini-3.8-flash`). Temporary failures are retried before falling back to `gemini-3.6-flash` and `gemini-3.5-flash-lite`. |
 | `TAVILY_API_KEY` | Server / Vercel API | *(Optional)* Tavily API key for search retrieval |
 | `VITE_API_BASE_URL` | Client (Build-time) | Base URL for APIs when deployed statically on GitHub Pages |
 | `PORT` | Local Dev Server | Server port (default: 3000) |
-

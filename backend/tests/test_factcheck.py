@@ -4,6 +4,7 @@ import os
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from app import create_app
+from app.services.verification_pipeline import GeminiUnavailableError
 
 @pytest.fixture
 def client():
@@ -45,13 +46,14 @@ def test_unknown_claim_reports_missing_config_without_mock(client, monkeypatch):
     assert response.status_code == 503
     assert response.get_json()['code'] == 'SERVER_MISCONFIGURED'
 
-def test_missing_tavily_key_is_not_a_result(client, monkeypatch):
+def test_missing_tavily_key_uses_available_search_fallback(client, monkeypatch):
     monkeypatch.setenv('GEMINI_API_KEY', 'test-gemini-key')
     monkeypatch.delenv('TAVILY_API_KEY', raising=False)
+    monkeypatch.setattr('app.services.verification_pipeline._search_wikipedia', lambda claim: [])
     response = client.post('/api/fact-check', json={'claim': 'Water boils at 100C at sea level'})
-    assert response.status_code == 503
-    assert response.get_json()['status'] == 'failed'
-    assert 'verdict' not in response.get_json()
+    assert response.status_code == 200
+    assert response.get_json()['status'] == 'inconclusive'
+    assert response.get_json()['verdict'] == 'UNVERIFIED'
 
 def test_failure_is_not_a_result(client, monkeypatch):
     def boom(claim):
@@ -62,3 +64,13 @@ def test_failure_is_not_a_result(client, monkeypatch):
     assert response.status_code == 502
     assert response.get_json()['status'] == 'failed'
     assert 'verdict' not in response.get_json()
+
+def test_gemini_unavailable_is_reported_as_retryable(client, monkeypatch):
+    def unavailable(claim):
+        raise GeminiUnavailableError('Gemini models are temporarily unavailable.')
+
+    monkeypatch.setattr('app.routes.factcheck_routes.verify_claim', unavailable)
+    response = client.post('/api/fact-check', json={'claim': 'x'})
+    assert response.status_code == 503
+    assert response.get_json()['code'] == 'GEMINI_UNAVAILABLE'
+    assert 'try again shortly' in response.get_json()['message']

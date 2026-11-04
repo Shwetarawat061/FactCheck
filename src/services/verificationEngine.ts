@@ -1,6 +1,39 @@
 import { GoogleGenAI } from '@google/genai';
 import { FactCheckResult, Evidence, ReasoningStep } from '../types/factCheck';
 
+export class GeminiUnavailableError extends Error {
+  constructor() {
+    super('Gemini models are temporarily unavailable.');
+    this.name = 'GeminiUnavailableError';
+  }
+}
+
+function isTemporaryGeminiError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const details = error as {
+    code?: unknown;
+    status?: unknown;
+    statusCode?: unknown;
+    message?: unknown;
+    response?: { status?: unknown; statusCode?: unknown };
+  };
+  const statuses = [
+    details.code,
+    details.status,
+    details.statusCode,
+    details.response?.status,
+    details.response?.statusCode,
+  ];
+  if (statuses.some((status) => [408, 429, 500, 502, 503, 504].includes(Number(status)))) {
+    return true;
+  }
+
+  const message = typeof details.message === 'string' ? details.message : String(error);
+  return /\b(?:408|429|500|502|503|504)\b|UNAVAILABLE|RESOURCE_EXHAUSTED|high demand|overloaded/i.test(
+    message
+  );
+}
+
 const MULTIPART_TLDS = new Set([
   'ac.uk', 'co.in', 'co.jp', 'co.nz', 'co.uk',
   'com.au', 'com.br', 'com.cn', 'com.mx', 'com.sg',
@@ -195,32 +228,46 @@ export async function searchWithWikipedia(claim: string): Promise<RetrievedSourc
 }
 
 export async function generateWithGemini(ai: GoogleGenAI, prompt: string): Promise<string> {
-  const models = [
+  const models = [...new Set([
     process.env.GEMINI_MODEL,
-    'gemini-3.1-flash-lite',
     'gemini-3.8-flash',
-    'gemini-flash-latest',
-  ].filter((m): m is string => Boolean(m) && m !== 'gemini-2.5-flash');
+    'gemini-3.6-flash',
+    'gemini-3.5-flash-lite',
+  ].filter((model): model is string => Boolean(model)))];
 
-  let lastError: any = null;
+  let lastError: unknown;
   for (const model of models) {
-    try {
-      const response = await ai.models.generateContent({
-        model,
-        contents: prompt,
-        config: {
-          responseMimeType: 'application/json',
-        },
-      });
-      const text = response.text?.trim();
-      if (text) return text;
-    } catch (err: any) {
-      lastError = err;
-      console.warn(`[Gemini] Model ${model} failed (${err?.message?.slice(0, 100)}), trying next...`);
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        console.info(`[Gemini] Trying ${model}, attempt ${attempt + 1}`);
+        const response = await ai.models.generateContent({
+          model,
+          contents: prompt,
+          config: { responseMimeType: 'application/json' },
+        });
+        const text = response.text?.trim();
+        if (text) {
+          console.info(`[Gemini] Success with ${model}`);
+          return text;
+        }
+        throw new Error(`Gemini returned an empty response from ${model}.`);
+      } catch (error) {
+        lastError = error;
+        const message = error instanceof Error ? error.message : String(error);
+        console.warn(`[Gemini] ${model} failed on attempt ${attempt + 1}: ${message.slice(0, 250)}`);
+        if (isTemporaryGeminiError(error) && attempt === 0) {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+          continue;
+        }
+        break;
+      }
     }
   }
 
-  throw lastError || new Error('All Gemini model candidates failed to respond.');
+  if (lastError instanceof Error && isTemporaryGeminiError(lastError)) {
+    throw new GeminiUnavailableError();
+  }
+  throw lastError ?? new Error('All Gemini model candidates failed to respond.');
 }
 
 export async function verifyClaimEngine(

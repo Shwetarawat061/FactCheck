@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { verifyClaimEngine } from './src/services/verificationEngine';
+import { GeminiUnavailableError, verifyClaimEngine } from './src/services/verificationEngine';
 
 dotenv.config();
 
@@ -93,6 +93,14 @@ app.post('/api/fact-check', async (req: Request, res: Response) => {
     res.json(result);
   } catch (error: any) {
     console.error('Fact-check evaluation error:', error);
+    if (error instanceof GeminiUnavailableError) {
+      res.status(503).json({
+        status: 'failed',
+        code: 'GEMINI_UNAVAILABLE',
+        message: 'AI verification is temporarily unavailable. Please try again shortly.',
+      });
+      return;
+    }
     res.status(502).json({
       status: 'failed',
       code: 'VERIFICATION_ERROR',
