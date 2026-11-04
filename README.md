@@ -128,6 +128,7 @@ python run.py
 | Variable | Scope | Description |
 |---|---|---|
 | `GEMINI_API_KEY` | Backend Only | Google Gemini API key for evidence analysis |
-| `GEMINI_MODEL` | Backend Only | Primary Gemini model (default: `gemini-3.8-flash`); temporary failures are retried and then fall back to `gemini-3.6-flash` and `gemini-3.5-flash-lite` |
-| `TAVILY_API_KEY` | Backend Only | Tavily API key for live web search; required |
-| `PORT` | Backend | Flask port (default: 5000) |
+| `GEMINI_MODEL` | Backend Only | Primary Gemini model (default: `gemini-3.8-flash`). Temporary failures are retried before falling back to `gemini-3.6-flash` and `gemini-3.5-flash-lite`. |
+| `TAVILY_API_KEY` | Backend Only | Tavily API key for live web search |
+| `VITE_API_BASE_URL` | Client (Build-time) | Base URL for API requests when deploying the frontend separately, such as GitHub Pages |
+| `PORT` | Backend | Flask server port (default: 5000) |
