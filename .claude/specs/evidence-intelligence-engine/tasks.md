@@ -60,8 +60,9 @@
 
 - [ ] 10. Connect ML labels to Tavily evidence aggregation
   - Rank retrieved passages, run baseline and optional NLI, then apply the documented MIXED vs INCONCLUSIVE aggregation rule
+  - Preserve each prediction's model ID and origin, and include model-specific version/origin metadata in `mlInsights.models`
   - Keep two-domain and excerpt-dropped-ratio gates
-  - Add tests for conflict, single-domain, and duplicate-domain cases
+  - Add tests for conflict, single-domain, duplicate-domain, and distinct baseline/NLI model metadata cases
   - _Requirements: 11.1, 11.2, 11.3, 11.4, 8.2_
 
 - [ ] 11. Implement confidence feature vector and calibrator

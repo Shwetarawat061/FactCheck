@@ -66,7 +66,7 @@ Existing user-facing verdicts (`TRUE`, `MOSTLY TRUE`, `MIXED`, `MOSTLY FALSE`, `
 1. WHEN a claim and a retrieved evidence passage are scored by the NLI capability THEN the system SHALL assign one of `SUPPORTS`, `CONTRADICTS`, or `NEUTRAL` (insufficient / not enough information).
 2. WHEN FEVER-style labels are mapped into the product THEN `REFUTES` SHALL map to `CONTRADICTS` and `NOT ENOUGH INFO` SHALL map to `NEUTRAL`.
 3. IF the NLI model is a pretrained MNLI/NLI transformer that was not trained in this repository THEN documentation and UI SHALL label it as pretrained and SHALL NOT claim that the team trained that transformer.
-4. WHERE both a user-trained baseline and a pretrained NLI model exist THEN the system SHALL keep their predictions distinguishable in API responses and in ML Insights.
+4. WHERE both a user-trained baseline and a pretrained NLI model exist THEN the system SHALL identify each prediction by its model ID and origin in API responses and ML Insights, and SHALL NOT represent their origins with one aggregate origin value.
 
 ### Requirement 6
 

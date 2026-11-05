@@ -137,6 +137,12 @@ type ModelOrigin = 'trained-in-repo' | 'pretrained';
 type ConfidenceKind = 'heuristic' | 'calibrated';
 type MlRuntimeStatus = 'ok' | 'unavailable' | 'degraded';
 
+interface MlModelInfo {
+  modelId: string;
+  modelVersion: string;
+  origin: ModelOrigin;
+}
+
 interface PairPrediction {
   evidenceId: string;
   label: MlLabel;
@@ -165,8 +171,7 @@ interface ConfidenceBreakdown {
 
 interface MlInsights {
   status: MlRuntimeStatus;
-  modelVersion: string;
-  origin: ModelOrigin;
+  models: MlModelInfo[];
   pairPredictions: PairPrediction[];
   rankings?: RankedPassage[];
   selectedBaseline?: string;
@@ -194,6 +199,8 @@ interface EvaluationSummary {
 }
 ```
 
+Each `pairPredictions` entry identifies its producing model through `modelId` and `origin`. Each `modelId` SHALL match an entry in `models`, whose version and origin are specific to that model. `MlInsights` deliberately has no single `origin` or `modelVersion`, since either could misrepresent responses containing multiple models.
+
 ### Label mapping
 
 ```mermaid
@@ -218,11 +225,17 @@ classDiagram
     }
     class MlInsights {
         status
-        modelVersion
+        models
         pairPredictions
         confidence
     }
+    class MlModelInfo {
+        modelId
+        modelVersion
+        origin
+    }
     class PairPrediction {
+        modelId
         label
         probabilities
         origin
@@ -233,6 +246,7 @@ classDiagram
     }
     FactCheckResult --> MlInsights
     MlInsights --> PairPrediction
+    MlInsights --> MlModelInfo
     EvaluationSummary --> PairPrediction
 ```
 
